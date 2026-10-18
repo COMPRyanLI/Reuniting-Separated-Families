@@ -1,0 +1,61 @@
+# FREE Render Blueprint (prepared 2026-10-19; NOT yet applied or validated with the Render CLI).
+#
+# One free web service runs everything: on each start it applies committed migrations, runs the
+# idempotent FICTIONAL seed, then serves the API + website and runs the outbox worker in-process.
+# Free-tier limits (Render docs, checked 2026-10-19): the web service sleeps after 15 minutes
+# without traffic (about a minute to wake); free Postgres expires 30 days after creation (14-day
+# grace, then deleted) and has no backups. Paid upgrade: deploy/render.paid.yaml.
+#
+# No secret values live in this file. Render generates DIGEST_KEY, FIELD_ENCRYPTION_KEY and the
+# demo seed values; APP_ORIGIN comes from Render's RENDER_EXTERNAL_URL automatically.
+
+services:
+  - type: web
+    name: reconnect-web
+    runtime: node
+    region: singapore
+    plan: free
+    # devDependencies are needed to build (Vite, esbuild, Prisma CLI).
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: node scripts/start-free.mjs
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.0
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      - key: INCIDENT_SLUG
+        value: demo-hurricane-1
+      - key: TRUST_PROXY
+        value: "1"
+      - key: RUN_WORKER_IN_PROCESS
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reconnect-db
+          property: connectionString
+      # Random base64 256-bit values generated once by Render.
+      - key: DIGEST_KEY
+        generateValue: true
+      - key: FIELD_ENCRYPTION_KEY
+        generateValue: true
+      # Fictional demo accounts (maya, leo, noor, evan, worker.a, coord.a, ...). Read SEED_PASSWORD
+      # in the Render dashboard to sign in; never post it publicly.
+      - key: SEED_ON_START
+        value: "yes"
+      - key: SEED_CONFIRM_FICTIONAL
+        value: "yes"
+      - key: SEED_PASSWORD
+        generateValue: true
+      - key: SEED_SECRET
+        generateValue: true
+
+databases:
+  - name: reconnect-db
+    region: singapore
+    plan: free
+    postgresMajorVersion: "17"
+    # No external access; the web service uses the internal connection string.
+    ipAllowList: []

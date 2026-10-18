@@ -1,0 +1,20 @@
+# Local development/test PostgreSQL only. Credentials are local placeholders,
+# not deployment secrets. The test suites create and drop rf_test_* databases here.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: rf_local
+      POSTGRES_PASSWORD: rf_local_dev_only
+      POSTGRES_DB: rf_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - rf_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rf_local -d rf_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  rf_pgdata:

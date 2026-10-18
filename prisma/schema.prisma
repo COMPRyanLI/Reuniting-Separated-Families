@@ -1,0 +1,680 @@
+// Schema is extended phase by phase. Migrations are generated with
+// `prisma migrate diff` between schema versions and hand-reviewed; cross-table
+// constraints that Prisma cannot express (composite incident FKs, partial unique
+// indexes, CHECK constraints) are appended as raw SQL in the same migration.
+// Never use `prisma migrate dev`/`db push` against shared databases.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- accounts
+
+enum AccountState {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum SessionKind {
+  INDIVIDUAL
+  STAFF
+}
+
+enum RecoveryPurpose {
+  ACCOUNT_RECOVERY
+  STAFF_MFA_RECOVERY
+}
+
+model Account {
+  id                 String       @id @default(uuid()) @db.Uuid
+  normalizedUsername String       @unique
+  passwordHash       String
+  state              AccountState @default(ACTIVE)
+  credentialVersion  Int          @default(1)
+  createdAt          DateTime     @db.Timestamptz(3)
+  deletedAt          DateTime?    @db.Timestamptz(3)
+
+  sessions            Session[]
+  recoveryCredentials RecoveryCredential[]
+  staffMfa            StaffMfa?
+  person              Person?
+  memberships         StaffMembership[]
+}
+
+model Session {
+  id                 String      @id @default(uuid()) @db.Uuid
+  accountId          String      @db.Uuid
+  tokenDigest        String      @unique
+  kind               SessionKind
+  credentialVersion  Int
+  createdAt          DateTime    @db.Timestamptz(3)
+  lastUserActivityAt DateTime    @db.Timestamptz(3)
+  idleTimeoutSeconds Int
+  expiresAt          DateTime    @db.Timestamptz(3)
+  mfaVerifiedAt      DateTime?   @db.Timestamptz(3)
+  revokedAt          DateTime?   @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@index([expiresAt])
+}
+
+model RecoveryCredential {
+  id        String          @id @default(uuid()) @db.Uuid
+  accountId String          @db.Uuid
+  purpose   RecoveryPurpose
+  digest    String          @unique
+  createdAt DateTime        @db.Timestamptz(3)
+  usedAt    DateTime?       @db.Timestamptz(3)
+  revokedAt DateTime?       @db.Timestamptz(3)
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, purpose])
+}
+
+model StaffMfa {
+  accountId           String    @id @db.Uuid
+  encryptedTotpSecret String
+  createdAt           DateTime  @db.Timestamptz(3)
+  enrolledAt          DateTime? @db.Timestamptz(3)
+  lastAcceptedStep    Int?
+
+  account Account @relation(fields: [accountId], references: [id])
+}
+
+// ---------------------------------------------------------------- places
+
+enum IncidentState {
+  ACTIVE
+  CLOSED
+}
+
+enum ShelterState {
+  OPEN
+  CLOSED
+}
+
+model Incident {
+  id    String        @id @default(uuid()) @db.Uuid
+  slug  String        @unique
+  label String
+  state IncidentState @default(ACTIVE)
+
+  areas    Area[]
+  shelters Shelter[]
+}
+
+model Area {
+  id         String @id @default(uuid()) @db.Uuid
+  incidentId String @db.Uuid
+  label      String
+
+  incident Incident  @relation(fields: [incidentId], references: [id])
+  shelters Shelter[]
+
+  @@unique([id, incidentId])
+  @@unique([incidentId, label])
+}
+
+model Shelter {
+  id            String       @id @default(uuid()) @db.Uuid
+  incidentId    String       @db.Uuid
+  areaId        String       @db.Uuid
+  name          String
+  publicAddress String
+  isPublic      Boolean      @default(true)
+  state         ShelterState @default(OPEN)
+
+  incident Incident @relation(fields: [incidentId], references: [id])
+  area     Area     @relation(fields: [areaId, incidentId], references: [id, incidentId])
+
+  @@unique([id, incidentId])
+  @@unique([id, areaId, incidentId])
+  @@unique([incidentId, name])
+}
+
+// ---------------------------------------------------------------- people
+
+enum RequestMode {
+  CLOSED
+  CODE_ONLY
+  ASSISTED
+}
+
+model Person {
+  id                    String      @id @default(uuid()) @db.Uuid
+  accountId             String?     @unique @db.Uuid
+  incidentId            String      @db.Uuid
+  alias                 String
+  encryptedMatchingClue String?
+  requestMode           RequestMode @default(CODE_ONLY)
+  restrictedReferral    Boolean     @default(false)
+  createdAt             DateTime    @db.Timestamptz(3)
+  deletedAt             DateTime?   @db.Timestamptz(3)
+  purgedAt              DateTime?   @db.Timestamptz(3)
+  version               Int         @default(1)
+
+  account Account? @relation(fields: [accountId], references: [id])
+
+  contactCodes          ContactCode[]
+  assistanceCredentials AssistanceCredential[]
+  cases                 AssistanceCase[]
+
+  @@unique([id, incidentId])
+  @@index([incidentId])
+}
+
+model ContactCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  personId  String    @db.Uuid
+  digest    String    @unique
+  createdAt DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+
+  person Person @relation(fields: [personId], references: [id])
+
+  @@index([personId])
+}
+
+model AssistanceCredential {
+  id        String    @id @default(uuid()) @db.Uuid
+  personId  String    @db.Uuid
+  digest    String    @unique
+  issuedAt  DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+
+  person Person @relation(fields: [personId], references: [id])
+
+  @@index([personId])
+}
+
+// ---------------------------------------------------------------- staff and cases
+
+enum StaffRole {
+  WORKER
+  COORDINATOR
+  OPERATOR
+}
+
+enum MembershipState {
+  ACTIVE
+  SUSPENDED
+}
+
+enum CaseState {
+  ACTIVE
+  CLOSED
+}
+
+enum AssignmentPurpose {
+  INTAKE
+  ASSIST
+}
+
+model StaffMembership {
+  id          String          @id @default(uuid()) @db.Uuid
+  accountId   String          @db.Uuid
+  incidentId  String          @db.Uuid
+  shelterId   String?         @db.Uuid
+  role        StaffRole
+  state       MembershipState @default(ACTIVE)
+  createdAt   DateTime        @db.Timestamptz(3)
+  suspendedAt DateTime?       @db.Timestamptz(3)
+
+  account     Account          @relation(fields: [accountId], references: [id])
+  assignments CaseAssignment[]
+
+  @@unique([id, incidentId])
+  @@unique([id, accountId])
+  @@index([accountId])
+  @@index([shelterId, state])
+}
+
+model AssistanceCase {
+  id                  String    @id @default(uuid()) @db.Uuid
+  personId            String    @db.Uuid
+  incidentId          String    @db.Uuid
+  shelterId           String    @db.Uuid
+  reference           String    @unique
+  state               CaseState @default(ACTIVE)
+  createdAt           DateTime  @db.Timestamptz(3)
+  lastActivityAt      DateTime  @db.Timestamptz(3)
+  lastReviewedAt      DateTime? @db.Timestamptz(3)
+  reviewExtendedUntil DateTime? @db.Timestamptz(3)
+  escalationOpenedAt  DateTime? @db.Timestamptz(3)
+  closedAt            DateTime? @db.Timestamptz(3)
+  version             Int       @default(1)
+
+  person      Person           @relation(fields: [personId], references: [id])
+  assignments CaseAssignment[]
+
+  @@unique([id, incidentId])
+  @@index([shelterId, state])
+  @@index([personId])
+}
+
+model CaseAssignment {
+  id                  String              @id @default(uuid()) @db.Uuid
+  caseId              String              @db.Uuid
+  incidentId          String              @db.Uuid
+  membershipId        String              @db.Uuid
+  staffAccountId      String              @db.Uuid
+  purposes            AssignmentPurpose[]
+  startsAt            DateTime            @db.Timestamptz(3)
+  endsAt              DateTime?           @db.Timestamptz(3)
+  assignedByAccountId String              @db.Uuid
+  endedReason         String?
+
+  case       AssistanceCase  @relation(fields: [caseId], references: [id])
+  membership StaffMembership @relation(fields: [membershipId], references: [id])
+
+  @@index([staffAccountId, endsAt])
+  @@index([caseId])
+}
+
+// ---------------------------------------------------------------- audit and limits
+
+model AuditEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorAccountId String?  @db.Uuid
+  action         String
+  objectType     String
+  objectId       String?
+  authorityType  String?
+  authorityId    String?
+  result         String
+  occurredAt     DateTime @db.Timestamptz(3)
+
+  @@index([occurredAt])
+  @@index([objectType, objectId])
+}
+
+model RateLimitBucket {
+  scopeDigest String
+  windowStart DateTime @db.Timestamptz(3)
+  count       Int
+  expiresAt   DateTime @db.Timestamptz(3)
+
+  @@id([scopeDigest, windowStart])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------- phase 02: check-ins, consent, assistance
+
+enum CheckInSource {
+  SELF_REPORT
+  STAFF_RECORDED
+}
+
+enum CheckInState {
+  ACTIVE
+  SUPERSEDED
+  DEPARTED
+}
+
+enum ReportedStatus {
+  UNSPECIFIED
+  REPORTED_OK
+  NEEDS_ASSISTANCE
+}
+
+enum EntryOrigin {
+  DIRECT
+  PAPER
+}
+
+/// Historical report: where a person was at observedAt. Never a live position.
+model CheckIn {
+  id               String         @id @default(uuid()) @db.Uuid
+  personId         String         @db.Uuid
+  incidentId       String         @db.Uuid
+  shelterId        String?        @db.Uuid
+  areaId           String         @db.Uuid
+  observedAt       DateTime       @db.Timestamptz(3)
+  receivedAt       DateTime       @db.Timestamptz(3)
+  authorAccountId  String         @db.Uuid
+  source           CheckInSource
+  state            CheckInState   @default(ACTIVE)
+  reportedStatus   ReportedStatus @default(UNSPECIFIED)
+  entryOrigin      EntryOrigin    @default(DIRECT)
+  supersedesId     String?        @unique @db.Uuid
+  departedAt       DateTime?      @db.Timestamptz(3)
+  createdViaCaseId String?        @db.Uuid
+
+  @@unique([id, personId])
+  @@index([personId, observedAt])
+}
+
+enum ConsentAction {
+  INTAKE_PARTICIPATION
+  PRIVACY_CHANGE
+  RELAY_CLUES
+  APPROVE_DISCLOSURE
+  DECLINE
+  BLOCK
+  WITHDRAW
+  REVOKE_GRANT
+  REVOKE_ALL
+  TRANSFER
+  DELETE
+}
+
+/// The person's expressed decision, as stated and recorded. Never overwritten; later decisions are new rows.
+model ConsentRecord {
+  id                  String        @id @default(uuid()) @db.Uuid
+  personId            String        @db.Uuid
+  actorAccountId      String        @db.Uuid
+  caseId              String?       @db.Uuid
+  assistanceSessionId String?       @db.Uuid
+  action              ConsentAction
+  scope               String?
+  detail              String?
+  recipientPersonId   String?       @db.Uuid
+  resourceId          String?
+  statedAt            DateTime      @db.Timestamptz(3)
+  recordedAt          DateTime      @db.Timestamptz(3)
+  policyVersion       String
+
+  @@index([personId, recordedAt])
+}
+
+enum AssistanceMethod {
+  SECRET
+  INTAKE_WITNESS
+}
+
+/// Short-lived, staff-specific proof that the assisted person was verified for this case.
+model AssistanceSession {
+  id             String           @id @default(uuid()) @db.Uuid
+  caseId         String           @db.Uuid
+  staffAccountId String           @db.Uuid
+  method         AssistanceMethod
+  verifiedAt     DateTime         @db.Timestamptz(3)
+  expiresAt      DateTime         @db.Timestamptz(3)
+  revokedAt      DateTime?        @db.Timestamptz(3)
+
+  @@index([caseId, staffAccountId])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid()) @db.Uuid
+  actorAccountId String   @db.Uuid
+  operation      String
+  subjectKey     String
+  keyDigest      String
+  payloadDigest  String
+  outcomeType    String?
+  outcomeId      String?
+  createdAt      DateTime @db.Timestamptz(3)
+  expiresAt      DateTime @db.Timestamptz(3)
+
+  @@unique([actorAccountId, operation, subjectKey, keyDigest])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------- phase 03: requests, responses, sharing
+
+enum RouteType {
+  CODE
+  ROUTED
+}
+
+/// Internal only. Requesters see a separate sanitized projection.
+enum RequestState {
+  SUBMITTED
+  ROUTING
+  UNRESOLVED
+  AWAITING_DECISION
+  RESPONDED
+  DECLINED
+  BLOCKED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum ShareScope {
+  SAFETY_MESSAGE
+  AREA
+  SHELTER
+}
+
+enum SafetyStatement {
+  NONE
+  REPORTED_OK
+  NEED_HELP
+  WILL_BE_IN_TOUCH
+}
+
+model ReunionRequest {
+  id                     String       @id @default(uuid()) @db.Uuid
+  incidentId             String       @db.Uuid
+  requesterPersonId      String       @db.Uuid
+  recipientPersonId      String?      @db.Uuid
+  routeType              RouteType
+  /// Lookup digest of the submitted contact code; cleared once resolved. The raw code is never stored.
+  codeDigest             String?
+  requesterAliasSnapshot String
+  encryptedIntroduction  String?
+  encryptedClues         String?
+  internalState          RequestState @default(SUBMITTED)
+  submittedAt            DateTime     @db.Timestamptz(3)
+  expiresAt              DateTime     @db.Timestamptz(3)
+  deliveredAt            DateTime?    @db.Timestamptz(3)
+  withdrawnAt            DateTime?    @db.Timestamptz(3)
+  closedAt               DateTime?    @db.Timestamptz(3)
+  textPurgedAt           DateTime?    @db.Timestamptz(3)
+  createdByAccountId     String       @db.Uuid
+  createdViaCaseId       String?      @db.Uuid
+  version                Int          @default(1)
+
+  @@unique([id, recipientPersonId])
+  @@unique([id, requesterPersonId])
+  @@index([requesterPersonId, submittedAt])
+  @@index([recipientPersonId, internalState])
+  @@index([internalState, expiresAt])
+}
+
+model Response {
+  id                  String          @id @default(uuid()) @db.Uuid
+  requestId           String          @unique @db.Uuid
+  subjectPersonId     String          @db.Uuid
+  scope               ShareScope
+  statement           SafetyStatement @default(NONE)
+  encryptedMessage    String?
+  checkInId           String?         @db.Uuid
+  sharedAlias         String
+  consentId           String          @db.Uuid
+  approvedAt          DateTime        @db.Timestamptz(3)
+  approvedByAccountId String          @db.Uuid
+  viaCaseId           String?         @db.Uuid
+  purgedAt            DateTime?       @db.Timestamptz(3)
+
+  @@unique([id, requestId, subjectPersonId, scope])
+}
+
+/// Directional, per-recipient permission to read exactly one response (and at most one check-in).
+model SharingGrant {
+  id                String     @id @default(uuid()) @db.Uuid
+  responseId        String     @unique @db.Uuid
+  requestId         String     @db.Uuid
+  subjectPersonId   String     @db.Uuid
+  recipientPersonId String     @db.Uuid
+  scope             ShareScope
+  checkInId         String?    @db.Uuid
+  consentId         String     @db.Uuid
+  createdAt         DateTime   @db.Timestamptz(3)
+  expiresAt         DateTime   @db.Timestamptz(3)
+  revokedAt         DateTime?  @db.Timestamptz(3)
+  revokedReason     String?
+
+  @@index([recipientPersonId, expiresAt])
+  @@index([subjectPersonId])
+}
+
+model Block {
+  id              String   @id @default(uuid()) @db.Uuid
+  subjectPersonId String   @db.Uuid
+  blockedPersonId String   @db.Uuid
+  createdAt       DateTime @db.Timestamptz(3)
+
+  @@unique([subjectPersonId, blockedPersonId])
+}
+
+enum AbuseCategory {
+  HARASSMENT
+  IMPERSONATION
+  UNSAFE_CONTENT
+  OTHER
+}
+
+model AbuseReport {
+  id                String        @id @default(uuid()) @db.Uuid
+  reporterPersonId  String        @db.Uuid
+  reporterAccountId String        @db.Uuid
+  requestId         String?       @db.Uuid
+  responseId        String?       @db.Uuid
+  category          AbuseCategory
+  state             String        @default("OPEN")
+  createdAt         DateTime      @db.Timestamptz(3)
+}
+
+enum NotificationKind {
+  REQUEST_RECEIVED
+  RESPONSE_AVAILABLE
+  LEAD_REQUESTED
+  CASE_REVIEW_DUE
+  TRANSFER_PENDING
+}
+
+/// Generic in-app notice. Points at a resource; never embeds messages or locations.
+model Notification {
+  id                 String           @id @default(uuid()) @db.Uuid
+  recipientAccountId String?          @db.Uuid
+  assistedCaseId     String?          @db.Uuid
+  eventKey           String
+  kind               NotificationKind
+  resourceType       String
+  resourceId         String
+  createdAt          DateTime         @db.Timestamptz(3)
+  readAt             DateTime?        @db.Timestamptz(3)
+
+  @@unique([eventKey, recipientAccountId])
+  @@unique([eventKey, assistedCaseId])
+  @@index([recipientAccountId, createdAt])
+  @@index([assistedCaseId, createdAt])
+}
+
+enum JobState {
+  PENDING
+  DONE
+  FAILED
+}
+
+model OutboxJob {
+  id               String    @id @default(uuid()) @db.Uuid
+  eventKey         String    @unique
+  kind             String
+  referencePayload Json
+  state            JobState  @default(PENDING)
+  attempts         Int       @default(0)
+  availableAt      DateTime  @db.Timestamptz(3)
+  leaseUntil       DateTime? @db.Timestamptz(3)
+  lastErrorCode    String?
+  completedAt      DateTime? @db.Timestamptz(3)
+  createdAt        DateTime  @db.Timestamptz(3)
+
+  @@index([state, availableAt])
+}
+
+// ---------------------------------------------------------------- phase 04: routing and case transfer
+
+enum RouteState {
+  PENDING_ASSIGNMENT
+  ASSIGNED
+  PROPOSED
+  NO_MATCH
+  ENDED
+}
+
+/// One explicitly consented destination shelter for a no-code request. Not a match result.
+model RequestRoute {
+  id                         String     @id @default(uuid()) @db.Uuid
+  requestId                  String     @db.Uuid
+  incidentId                 String     @db.Uuid
+  destinationShelterId       String     @db.Uuid
+  relayConsentId             String     @db.Uuid
+  state                      RouteState @default(PENDING_ASSIGNMENT)
+  assignedWorkerAccountId    String?    @db.Uuid
+  assignedWorkerMembershipId String?    @db.Uuid
+  assignedByAccountId        String?    @db.Uuid
+  createdAt                  DateTime   @db.Timestamptz(3)
+  assignedAt                 DateTime?  @db.Timestamptz(3)
+  endedAt                    DateTime?  @db.Timestamptz(3)
+  version                    Int        @default(1)
+
+  @@index([destinationShelterId, state])
+  @@index([assignedWorkerAccountId, state])
+  @@index([requestId])
+}
+
+/// A coordinator's generic "can you add another lead?" prompt. Reveals no candidate.
+model LeadAsk {
+  id               String   @id @default(uuid()) @db.Uuid
+  requestId        String   @db.Uuid
+  askedByAccountId String   @db.Uuid
+  createdAt        DateTime @db.Timestamptz(3)
+
+  @@index([requestId])
+}
+
+enum TransferState {
+  PROPOSED
+  ACCEPTED
+  CANCELLED
+}
+
+model CaseTransfer {
+  id                  String        @id @default(uuid()) @db.Uuid
+  caseId              String        @db.Uuid
+  incidentId          String        @db.Uuid
+  fromShelterId       String        @db.Uuid
+  toShelterId         String        @db.Uuid
+  consentId           String        @db.Uuid
+  state               TransferState @default(PROPOSED)
+  proposedByAccountId String        @db.Uuid
+  decidedByAccountId  String?       @db.Uuid
+  createdAt           DateTime      @db.Timestamptz(3)
+  decidedAt           DateTime?     @db.Timestamptz(3)
+  version             Int           @default(1)
+
+  @@index([toShelterId, state])
+  @@index([caseId])
+}
+
+// ---------------------------------------------------------------- lifecycle: deletion ledger and restore gate
+
+/// Minimal restore-safe deletion ledger. Holds identifiers and times only, never content.
+model DeletionTombstone {
+  id         String    @id @default(uuid()) @db.Uuid
+  personRef  String    @db.Uuid
+  accountRef String?   @db.Uuid
+  deletedAt  DateTime  @db.Timestamptz(3)
+  purgeAfter DateTime  @db.Timestamptz(3)
+  purgedAt   DateTime? @db.Timestamptz(3)
+  reason     String
+
+  @@index([purgedAt, purgeAfter])
+}
+
+model SystemFlag {
+  key       String   @id
+  value     String
+  updatedAt DateTime @db.Timestamptz(3)
+}

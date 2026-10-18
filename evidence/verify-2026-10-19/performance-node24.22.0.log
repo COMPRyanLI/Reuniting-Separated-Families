@@ -1,0 +1,139 @@
+
+> family-reunification-prototype@0.1.0 test:performance
+> tsx scripts/perf/run.ts
+
+migrating and seeding synthetic dataset...
+dataset ready in 9.746s: {"persons":10010,"shelters":50,"checkIns":30004,"requests":20000,"grants":5000,"cases":6006}
+warm-up 30s...
+measuring 60s with 20 concurrent clients...
+{
+  "measuredAt": "2026-10-18T20:45:58.256Z",
+  "environment": {
+    "os": "Windows_NT 10.0.22631 x64",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+    "logicalCpus": 20,
+    "ramGiB": 15.6,
+    "node": "v24.22.0",
+    "postgres": "PostgreSQL 17.11 on x86_64-pc-linux-musl",
+    "database": "local Docker container on the same machine (not remote)",
+    "appMode": "in-process API + worker, NODE_ENV=test over http://localhost, rate limits raised for throughput measurement",
+    "hosted": "not measured: local results on this machine, not the Render free tier (0.1 CPU, 512 MB)"
+  },
+  "dataset": {
+    "persons": 10010,
+    "shelters": 50,
+    "checkIns": 30004,
+    "requests": 20000,
+    "grants": 5000,
+    "cases": 6006,
+    "seconds": 9.746
+  },
+  "perf01": {
+    "clients": 20,
+    "warmupSeconds": 30,
+    "measureSeconds": 60,
+    "operations": 29939,
+    "p50Ms": 36.8,
+    "p95Ms": 68,
+    "errorRatePct": 0,
+    "unexpected4xx": 0,
+    "unauthorizedPayloads": 0,
+    "byRoute": {
+      "GET /notifications (poll)": {
+        "count": 3017,
+        "p50": 19.9,
+        "p95": 29.2,
+        "errors5xx": 0
+      },
+      "GET /me/check-ins": {
+        "count": 3006,
+        "p50": 25.8,
+        "p95": 37,
+        "errors5xx": 0
+      },
+      "GET /responses/:id (denied)": {
+        "count": 2951,
+        "p50": 31.3,
+        "p95": 45.7,
+        "errors5xx": 0
+      },
+      "GET /requests/incoming": {
+        "count": 4634,
+        "p50": 35.1,
+        "p95": 49.2,
+        "errors5xx": 0
+      },
+      "GET /requests/outgoing": {
+        "count": 5921,
+        "p50": 40.1,
+        "p95": 54.9,
+        "errors5xx": 0
+      },
+      "GET /responses/:id (authorized)": {
+        "count": 4496,
+        "p50": 35.9,
+        "p95": 50.2,
+        "errors5xx": 0
+      },
+      "POST /requests": {
+        "count": 2046,
+        "p50": 61.2,
+        "p95": 84.6,
+        "errors5xx": 0
+      },
+      "POST /me/check-ins": {
+        "count": 2341,
+        "p50": 60.6,
+        "p95": 83.7,
+        "errors5xx": 0
+      },
+      "GET /staff/tasks": {
+        "count": 1527,
+        "p50": 61.8,
+        "p95": 84.3,
+        "errors5xx": 0
+      }
+    }
+  },
+  "perf02": {
+    "requestsCreated": 2046,
+    "delivered": 2043,
+    "unresolvedByDesign": 3,
+    "stillPending": 0,
+    "deliveryP50Ms": 388,
+    "deliveryP95Ms": 1057,
+    "worstCaseBrowserSeesUpdateMs": 16057,
+    "duplicateNotifications": 0,
+    "loginSample": 100,
+    "loginP50Ms": 46.8,
+    "loginP95Ms": 52.8
+  },
+  "perf03": {
+    "initialJsGzipKiB": 95.9,
+    "lcpRunsMs": [
+      1240,
+      1196,
+      1180,
+      1252,
+      1216
+    ],
+    "lcpMedianMs": 1216,
+    "externalRequestHosts": [],
+    "coldStartToReadyMs": 279
+  },
+  "totalSeconds": 124.611,
+  "gates": {
+    "PERF-01 p95 < 500 ms": true,
+    "PERF-01 5xx/network errors < 1%": true,
+    "PERF-01 zero unauthorized payloads": true,
+    "PERF-01 >= 1000 operations": true,
+    "PERF-02 delivery p95 <= 5 s": true,
+    "PERF-02 browser update <= 20 s": true,
+    "PERF-02 no duplicate delivery": true,
+    "PERF-02 login p95 <= 1500 ms": true,
+    "PERF-03 initial JS <= 250 KiB gzip": true,
+    "PERF-03 median LCP <= 2.5 s": true,
+    "PERF-03 no external hosts": true
+  }
+}
+exit=0

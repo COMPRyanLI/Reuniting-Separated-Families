@@ -1,0 +1,61 @@
+{
+  "ranAt": "2026-10-18T20:48:44.034Z",
+  "databases": "disposable rf_test_drill_* (dropped afterwards)",
+  "results": [
+    {
+      "name": "live: requester can read the answer before backup",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "live: subject revokes the grant",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "live: victim deletes their account",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ledger contains no names or messages",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "restored copy is not ready while gated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "restored copy refuses sign-in while gated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "restored copy is ready after replay",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "revoked answer is not served from the restored copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "deleted account cannot sign in on the restored copy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pre-backup session cookies no longer work",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "deleted person purged in the restored copy",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

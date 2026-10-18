@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local configuration and secrets (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Test, coverage and transient reports (may contain request metadata)
+coverage/
+test-results/
+playwright-report/
+blob-report/
+evidence/tmp/
+perf-results/
+
+# Agent scratch and planning temp files
+tmp/
+.superpowers/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

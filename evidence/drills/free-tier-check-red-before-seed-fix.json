@@ -1,0 +1,46 @@
+{
+  "ranAt": "2026-10-18T19:38:08.482Z",
+  "note": "local rehearsal over http, NODE_ENV=test; not a deployment",
+  "results": [
+    {
+      "name": "start script migrated an empty database and became ready",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "seed ran at start (fictional account signs in with the generated password)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "smoke test incl. delivery by the in-process worker",
+      "ok": true,
+      "detail": "14/14 checks passed"
+    },
+    {
+      "name": "deleting seeded Leo and Ana purges their check-ins and assistance credential at once",
+      "ok": true,
+      "detail": "before {\"leoCheckIns\":2,\"anaCheckIns\":1,\"anaCredentials\":1}, after {\"leoCheckIns\":0,\"anaCheckIns\":0,\"anaCredentials\":0}"
+    },
+    {
+      "name": "restart: startup seed skipped the already seeded database",
+      "ok": false,
+      "detail": ""
+    },
+    {
+      "name": "restart: purged check-ins and assistance credentials were not recreated",
+      "ok": false,
+      "detail": "{\"leoCheckIns\":2,\"anaCheckIns\":1,\"anaCredentials\":1}"
+    },
+    {
+      "name": "restart: data persisted and no accounts were added",
+      "ok": true,
+      "detail": "14 accounts"
+    },
+    {
+      "name": "restart: deleted Leo still cannot sign in; Maya still can",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

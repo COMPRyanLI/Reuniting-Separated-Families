@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+.env
+.env.*
+!.env.example
+tmp
+evidence
+test-results
+playwright-report
+perf-results
+.git
+.superpowers
+Full stack challenge.pdf

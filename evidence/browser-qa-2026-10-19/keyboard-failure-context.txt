@@ -1,0 +1,231 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: a11y.spec.ts >> UX-01 @a11y keyboard-only journey: sign up, add a check-in, send a request, with visible focus
+- Location: tests\e2e\a11y.spec.ts:93:1
+
+# Error details
+
+```
+Error: expect(received).not.toBe(expected) // Object.is equality
+
+Expected: not ""
+
+Call Log:
+- Timeout 10000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main"
+  - note [ref=e4]: Demo - fictional data only. Not an emergency service. Do not enter real personal information.
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - link "Reconnect demo" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - navigation "Main" [ref=e8]:
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "Dashboard" [ref=e11] [cursor=pointer]:
+              - /url: /dashboard
+          - listitem [ref=e12]:
+            - link "Requests for you" [ref=e13] [cursor=pointer]:
+              - /url: /requests/incoming
+          - listitem [ref=e14]:
+            - link "Your requests" [ref=e15] [cursor=pointer]:
+              - /url: /requests/outgoing
+          - listitem [ref=e16]:
+            - link "Sharing" [ref=e17] [cursor=pointer]:
+              - /url: /sharing
+          - listitem [ref=e18]:
+            - link "Account" [ref=e19] [cursor=pointer]:
+              - /url: /account
+          - listitem [ref=e20]:
+            - link "Help" [ref=e21] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e22]:
+        - link "Updates" [ref=e23] [cursor=pointer]:
+          - /url: /notifications
+        - generic [ref=e24]:
+          - text: Signed in as
+          - strong [ref=e25]: kb.369d5f
+        - button "Sign out" [ref=e26] [cursor=pointer]
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - heading "Your check-ins" [level=1] [ref=e29]
+      - paragraph [ref=e30]: A check-in records where you were at a stated time. Nobody sees it unless you share one specific check-in with one specific person.
+      - generic [ref=e31]:
+        - heading "Add a check-in" [level=3] [ref=e32]
+        - group "Where were you?" [ref=e33]:
+          - generic [ref=e35]:
+            - radio "At a shelter" [checked] [ref=e36]
+            - generic [ref=e37]: At a shelter
+          - generic [ref=e38]:
+            - radio "In an area (no shelter)" [ref=e39]
+            - generic [ref=e40]: In an area (no shelter)
+        - generic [ref=e41]:
+          - generic [ref=e42]: Shelter
+          - combobox "Shelter" [active] [ref=e43]:
+            - option "Choose a shelter" [selected]
+            - option "Hillcrest School Gym (Hillcrest)"
+            - option "Lakeside Church Hall (Lakeside)"
+            - option "Riverside Community Center (North Riverside)"
+        - generic [ref=e44]:
+          - generic [ref=e45]: When were you there?
+          - generic [ref=e46]: "Your timezone: Asia/Shanghai. Earlier times are fine."
+          - textbox "When were you there?" [ref=e47]: 2026-10-19T02:30
+        - generic [ref=e48]:
+          - generic [ref=e49]: Status at that time (optional)
+          - generic [ref=e50]: Recorded as a statement, not a safety check.
+          - combobox "Status at that time (optional)" [ref=e51]:
+            - option "Not stated" [selected]
+            - option "I said I was OK"
+            - option "I needed help"
+        - generic [ref=e52]:
+          - button "Save check-in" [ref=e53] [cursor=pointer]
+          - button "Cancel" [ref=e54] [cursor=pointer]
+      - heading "History" [level=2] [ref=e55]
+      - paragraph [ref=e56]: No check-ins yet. You can use the site without one.
+      - list
+  - contentinfo [ref=e57]:
+    - generic [ref=e58]: Challenge prototype using fictional people and shelters. It cannot locate anyone, does not track devices, and is not monitored for emergencies.
+```
+
+# Test source
+
+```ts
+  23  |     ['/dashboard', /Hello/],
+  24  |     ['/check-ins', 'Your check-ins'],
+  25  |     ['/privacy', 'Privacy and contact code'],
+  26  |     ['/requests/new', 'Find someone'],
+  27  |     ['/requests/outgoing', 'Your requests'],
+  28  |     ['/requests/incoming', 'Requests for you'],
+  29  |     ['/sharing', 'Manage sharing'],
+  30  |     ['/shared', 'Shared with you'],
+  31  |     ['/notifications', 'Updates'],
+  32  |     ['/account', 'Account'],
+  33  |   ];
+  34  |   for (const [path, heading] of pages) {
+  35  |     await page.goto(path);
+  36  |     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+  37  |     await scan(page, path);
+  38  |   }
+  39  |   // Open forms and error states too.
+  40  |   await page.goto('/check-ins');
+  41  |   await page.getByRole('button', { name: 'Add a check-in' }).click();
+  42  |   await page.getByRole('button', { name: 'Save check-in' }).click();
+  43  |   await expect(page.getByRole('alert')).toBeVisible();
+  44  |   await scan(page, '/check-ins form with errors');
+  45  |   await page.goto('/requests/new');
+  46  |   await page.getByRole('button', { name: 'Send private request' }).click();
+  47  |   await expect(page.getByRole('alert')).toBeVisible();
+  48  |   await scan(page, '/requests/new with errors');
+  49  |   await context.close();
+  50  | });
+  51  | 
+  52  | test('UX-01 @a11y staff pages have no critical or serious automated findings', async ({ browser }) => {
+  53  |   const { context, page } = await newActor(browser);
+  54  |   await signIn(page, 'worker.b');
+  55  |   await expect(page.getByRole('heading', { name: 'Staff two-step verification' })).toBeVisible();
+  56  |   await scan(page, '/staff/verify');
+  57  |   await context.close();
+  58  |   const staff = await newActor(browser);
+  59  |   await signInStaff(staff.page, 'worker.b');
+  60  |   await scan(staff.page, '/staff');
+  61  |   await staff.page.goto('/staff/intake');
+  62  |   await scan(staff.page, '/staff/intake');
+  63  |   await staff.page.goto('/staff');
+  64  |   await staff.page.getByRole('link', { name: /^Ana/ }).click();
+  65  |   await scan(staff.page, 'case (unverified)');
+  66  |   await staff.page.getByLabel('Assistance secret').fill(demoSecret(SEED_SECRET, 'assist:ana'));
+  67  |   await staff.page.getByRole('button', { name: 'Verify', exact: true }).click();
+  68  |   await expect(staff.page.getByRole('heading', { name: 'Verified for this visit' })).toBeVisible();
+  69  |   await scan(staff.page, 'case (verified)');
+  70  |   await staff.context.close();
+  71  |   const coord = await newActor(browser);
+  72  |   await signInStaff(coord.page, 'coord.b');
+  73  |   await scan(coord.page, '/staff (coordinator)');
+  74  |   await coord.context.close();
+  75  | });
+  76  | 
+  77  | /** Presses Tab until the focused element has the given accessible label/text. */
+  78  | async function tabTo(page: Page, name: RegExp, max = 60) {
+  79  |   for (let i = 0; i < max; i++) {
+  80  |     await page.keyboard.press('Tab');
+  81  |     const label = await page.evaluate(() => {
+  82  |       const el = document.activeElement as HTMLElement | null;
+  83  |       if (!el) return '';
+  84  |       const id = el.getAttribute('id');
+  85  |       const lbl = id ? document.querySelector(`label[for="${id}"]`)?.textContent : '';
+  86  |       return `${lbl ?? ''} ${el.getAttribute('aria-label') ?? ''} ${el.textContent ?? ''}`.trim();
+  87  |     });
+  88  |     if (name.test(label)) return;
+  89  |   }
+  90  |   throw new Error(`could not reach ${name} with Tab`);
+  91  | }
+  92  | 
+  93  | test('UX-01 @a11y keyboard-only journey: sign up, add a check-in, send a request, with visible focus', async ({ browser }) => {
+  94  |   const { context, page } = await newActor(browser);
+  95  |   await page.goto('/signup');
+  96  |   // Pages are lazy-loaded: wait for the page before using the keyboard.
+  97  |   await expect(page.getByRole('heading', { name: 'Create an account' })).toBeVisible();
+  98  |   await tabTo(page, /^Username/);
+  99  |   const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
+  100 |   expect(outline).not.toBe('none');
+  101 |   await page.keyboard.type(uniqueName('kb'));
+  102 |   await tabTo(page, /^Password/);
+  103 |   await page.keyboard.type('keyboard only passphrase');
+  104 |   await tabTo(page, /Name others will see/);
+  105 |   await page.keyboard.type('Keyboard User');
+  106 |   await tabTo(page, /^Create account$/);
+  107 |   await page.keyboard.press('Enter');
+  108 |   await expect(page.getByRole('heading', { name: 'Save your recovery secret' })).toBeVisible();
+  109 |   await tabTo(page, /I have written down/);
+  110 |   await page.keyboard.press('Space');
+  111 |   await tabTo(page, /^Continue$/);
+  112 |   await page.keyboard.press('Enter');
+  113 |   await expect(page.getByRole('heading', { name: /Hello, Keyboard User/ })).toBeVisible();
+  114 | 
+  115 |   await tabTo(page, /Let someone know/);
+  116 |   await page.keyboard.press('Enter');
+  117 |   await expect(page.getByRole('heading', { name: 'Your check-ins' })).toBeVisible();
+  118 |   await tabTo(page, /^Add a check-in$/);
+  119 |   await page.keyboard.press('Enter');
+  120 |   await expect(page.getByRole('button', { name: 'Save check-in' })).toBeVisible();
+  121 |   await tabTo(page, /^Shelter/);
+  122 |   await page.keyboard.press('ArrowDown');
+> 123 |   await expect.poll(() => page.evaluate(() => (document.activeElement as HTMLSelectElement).value)).not.toBe('');
+      |                                                                                                         ^ Error: expect(received).not.toBe(expected) // Object.is equality
+  124 |   await tabTo(page, /^Save check-in$/);
+  125 |   await page.keyboard.press('Enter');
+  126 |   await expect(page.getByRole('article').first()).toContainText('Last reported');
+  127 | 
+  128 |   await page.goto('/requests/new');
+  129 |   await expect(page.getByRole('heading', { name: 'Find someone' })).toBeVisible();
+  130 |   await tabTo(page, /^Contact code/);
+  131 |   await page.keyboard.type('0000-0000-0000-0000-0000-0000-00');
+  132 |   await tabTo(page, /^Introduction/);
+  133 |   await page.keyboard.type('Sent with the keyboard only');
+  134 |   await tabTo(page, /^Send private request$/);
+  135 |   await page.keyboard.press('Enter');
+  136 |   await expect(page.getByRole('heading', { name: 'Request saved' })).toBeVisible();
+  137 |   await context.close();
+  138 | });
+  139 | 
+  140 | test('UX-01 @a11y error summary receives focus after a failed sign-in', async ({ browser }) => {
+  141 |   const { context, page } = await newActor(browser);
+  142 |   await signIn(page, 'nobody.at.all', 'wrong password!!', { expectSuccess: false });
+  143 |   await expect(page.getByRole('alert')).toBeVisible();
+  144 |   await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('role'))).toBe('alert');
+  145 |   await context.close();
+  146 | });
+  147 | 
+```
