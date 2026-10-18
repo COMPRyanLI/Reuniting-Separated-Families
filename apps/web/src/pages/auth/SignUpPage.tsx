@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import type { SessionDto } from '@rf/contracts';
 import { api } from '../../lib/api';
 import { useSession } from '../../lib/session';
-import { ErrorSummary, Field, SecretBox, useSubmit } from '../../components/forms';
+import { ErrorSummary, Field, ResultHeading, SecretBox, useSubmit } from '../../components/forms';
 import { usePageTitle } from '../../components/PageTitle';
 
 export function SignUpPage() {
@@ -33,7 +33,7 @@ export function SignUpPage() {
   if (recoverySecret && pendingSession) {
     return (
       <div className="narrow stack">
-        <h1>Save your recovery secret</h1>
+        <ResultHeading>Save your recovery secret</ResultHeading>
         <div className="alert alert-warn">
           <p>
             This is the only way to get back into your account if you forget your password. It is shown only once. Write it

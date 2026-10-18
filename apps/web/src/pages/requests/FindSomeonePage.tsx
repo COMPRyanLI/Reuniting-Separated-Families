@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useSession } from '../../lib/session';
 import { RequestForm } from '../../components/RequestForm';
+import { ResultHeading } from '../../components/forms';
 import { usePageTitle } from '../../components/PageTitle';
 
 export function FindSomeonePage() {
@@ -14,7 +15,7 @@ export function FindSomeonePage() {
   if (sent) {
     return (
       <div className="narrow stack">
-        <h1>Request saved</h1>
+        <ResultHeading>Request saved</ResultHeading>
         <div className="alert alert-ok" role="status">
           <p>
             Your request was saved. For everyone’s safety we never say whether a code matched someone, or whether a request was

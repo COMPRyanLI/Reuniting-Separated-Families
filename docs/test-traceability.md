@@ -11,7 +11,8 @@ Windows 11, **Node 24.22.0** (per-user install; `node --version` is printed at t
 | Run | Result | Evidence |
 | --- | --- | --- |
 | `npm run verify`, run 5 (first run on Node 24.22.0, before entry 13's code changes) | PASSED: unit 26/26, integration 98/98, security 14/14, e2e 27/27, a11y 4/4; no skips | `evidence/verify-2026-10-19/verify-run5-node24.22.0.log` |
-| `npm run verify`, run 6 (**final**, all entry 13 changes) | PASSED: docs, lint, typecheck, build, unit 26/26, integration 99/99, security 14/14, e2e 27/27, a11y 5/5; no skips | `evidence/verify-2026-10-19/verify-run6-final-node24.22.0.log` |
+| `npm run verify`, run 7 (**latest**, entry 15: shelter tests, provisioning, result-screen focus) | PASSED: docs, lint, typecheck, build, unit 26/26, integration 102/102, security 14/14, e2e 28/28, a11y 7/7; no skips | `evidence/verify-2026-10-19/verify-run7-node24.22.0.log` |
+| `npm run verify`, run 6 (all entry 13 changes) | PASSED: docs, lint, typecheck, build, unit 26/26, integration 99/99, security 14/14, e2e 27/27, a11y 5/5; no skips | `evidence/verify-2026-10-19/verify-run6-final-node24.22.0.log` |
 | `npm run test:performance` (API and worker inside the load-generator process) | PASSED 11/11 gates: 29,939 operations, p50 36.8 ms, p95 68.0 ms, 0% errors, 0 unauthorized payloads; delivery p95 1,057 ms, 0 duplicates; login p95 52.8 ms; initial JS 95.9 KiB gzip; median LCP 1,216 ms; cold start 279 ms | `evidence/performance/perf-summary.json`, `evidence/verify-2026-10-19/performance-node24.22.0.log` |
 | `npm run test:performance -- --single-process` (the free-hosting start command `scripts/start-free.mjs` as its own process, worker in the web process) | PASSED 11/11 gates: 34,473 operations, p50 32.0 ms, p95 61.6 ms, 0% errors, 0 unauthorized payloads; delivery p95 1,082 ms, 0 duplicates; login p95 48.5 ms; median LCP 1,200 ms; cold start to ready 1,332 ms (includes the migrate and seed checks) | `evidence/performance/perf-summary-single-process.json`, `evidence/verify-2026-10-19/performance-single-process-node24.22.0.log` |
 | `npm run drill:restore` | 11/11 | `evidence/drills/restore-drill.json` |
@@ -64,8 +65,8 @@ Suites: `unit` = `npm run test:unit`, `int` = `npm run test:integration`, `sec` 
 | FLOW-02 | Automated | int `requests-flow.test.ts` FLOW-02 |
 | FLOW-03 | Automated | int `requests-flow.test.ts` FLOW-03 |
 | FLOW-04 | Automated | int `requests-flow.test.ts` FLOW-04 |
-| FLOW-05 | Automated | int `tests/integration/shelter.test.ts` FLOW-05; e2e `flows.spec.ts` FLOW-05 |
-| FLOW-06 | Automated | int `shelter.test.ts` FLOW-06; e2e `flows.spec.ts` FLOW-06 |
+| FLOW-05 | Automated | int `tests/integration/shelter.test.ts` FLOW-05; e2e `flows.spec.ts` FLOW-05; e2e `shelter-walkthrough.spec.ts` (two people without devices at two shelters, paper contact code from intake); int `intake-contact-code.test.ts` |
+| FLOW-06 | Automated | int `shelter.test.ts` FLOW-06; e2e `flows.spec.ts` FLOW-06; e2e `shelter-walkthrough.spec.ts` (no-code request from one assisted person to another: coordinator assigns, worker proposes, recipient decides at a verified visit, requester learns nothing before the answer). Human run: [shelter walkthrough](shelter-walkthrough.md) done by the owner, overall report only (2026-10-19) |
 | PRIV-01 | Automated | sec `tests/security/enumeration.test.ts` (3) |
 | PRIV-02 | Automated | sec `authorization.test.ts` PRIV-02 |
 | PRIV-03 | Automated | sec `authorization.test.ts` PRIV-03; e2e storage checks |
@@ -74,7 +75,7 @@ Suites: `unit` = `npm run test:unit`, `int` = `npm run test:integration`, `sec` 
 | PRIV-06 | Automated | sec `authorization.test.ts` PRIV-06 (2) |
 | PRIV-07 | Automated | int `requests-flow.test.ts` PRIV-07 |
 | PRIV-08 | Automated | int `shelter.test.ts` PRIV-08 and STAFF-05; int `review-findings.test.ts` (ask-for-lead gives one answer for every hidden state); e2e `lifecycle.spec.ts` (assigning coordinator gets no case access) |
-| STAFF-01 | Automated | int `tests/integration/staff-intake.test.ts` STAFF-01 (4); int `review-findings.test.ts` (multi-shelter staff must choose an own shelter); e2e `tests/e2e/staff.spec.ts` |
+| STAFF-01 | Automated | int `tests/integration/staff-intake.test.ts` STAFF-01 (4); int `review-findings.test.ts` (multi-shelter staff must choose an own shelter); int `intake-contact-code.test.ts` (contact code issued at intake reaches the case; restricted referral refuses it); int `staff-provision.test.ts` (the real `staff:admin provision` command: needs `--confirm` and an existing account, refuses a duplicate role clearly, ends old sessions, staff tools need two-step setup); e2e `tests/e2e/staff.spec.ts` |
 | STAFF-02 | Automated | int `staff-intake.test.ts` STAFF-02 (3); e2e `staff.spec.ts` |
 | STAFF-03 | Automated | int `staff-intake.test.ts` STAFF-03 (2); int `shelter.test.ts` FLOW-06; e2e `lifecycle.spec.ts` STAFF-03 (restricted intake, no sharing tools) |
 | STAFF-04 | Automated | int `shelter.test.ts` STAFF-04 |
@@ -86,7 +87,7 @@ Suites: `unit` = `npm run test:unit`, `int` = `npm run test:integration`, `sec` 
 | REL-02 | Automated | int `reliability.test.ts` REL-02 (4); int `review-findings.test.ts` (concurrent duplicate assignments: one 201, rest 409) |
 | REL-03 | Automated | int `reliability.test.ts` REL-03 (2) |
 | REL-04 | Automated | int `reliability.test.ts` REL-04 |
-| UX-01 | Automated; **screen reader PENDING** | a11y `tests/e2e/a11y.spec.ts` (axe on 20 page states, keyboard-only journey, error focus): 5/5 in final verify run 6; keyboard journey 15/15 repeated (entry 10). e2e `checkins.spec.ts` (place lists announce loading and stay disabled until ready). int `field-errors.test.ts` (each secret-like field names itself in its error, found in the zoom review). **Screen-reader evaluation PENDING**: [walkthrough](screen-reader-walkthrough.md) prepared; needs a person listening, not marked passed from automated tests |
+| UX-01 | Automated; **screen reader: walkthrough done with open details** | a11y `tests/e2e/a11y.spec.ts` (axe on 20 page states, keyboard-only journey, error focus): 5/5 in final verify run 6; keyboard journey 15/15 repeated (entry 10). e2e `checkins.spec.ts` (place lists announce loading and stay disabled until ready). int `field-errors.test.ts` (each secret-like field names itself in its error, found in the zoom review). a11y "result screens that replace a form move focus to their heading" (2, found from walkthrough step 8). **Screen reader**: owner reported steps 1 and 3–12 OK ([walkthrough](screen-reader-walkthrough.md)); open: step 2 speech, step 8/5 re-listen after the focus fix, screen reader name/version; not an unconditional pass |
 | UX-02 | Automated + Evidence | e2e `tests/e2e/screenshots.spec.ts`; `evidence/screenshots/`. **200% browser zoom done (2026-10-19)**: `npm run audit:zoom` with real Chromium page zoom (Chromium 156, window 1280x800, CSS viewport 632 px), 40 views incl. forms with errors, dialogs, navigation, staff flows; measurements plus human screenshot review; found the staff two-step setup link scrolling sideways (fixed; regression a11y.spec "UX-02 ... setup reflows at 390 px"). Firefox/Safari zoom not checked |
 | UX-03 | Automated | e2e `flows.spec.ts` UX-03; e2e `checkins.spec.ts` (failed place list announced with retry) |
 | UX-04 | Automated | e2e `auth.spec.ts`, `flows.spec.ts` UX-04 (2) |

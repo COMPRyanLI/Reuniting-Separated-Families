@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { REQUEST_MODE_TEXT, toLocalInputValue, fromLocalInputValue } from '../../lib/format';
-import { ErrorSummary, Field, SecretBox, useSubmit } from '../../components/forms';
+import { ErrorSummary, Field, ResultHeading, SecretBox, useSubmit } from '../../components/forms';
 import { usePageTitle } from '../../components/PageTitle';
 
 type Mode = 'CLOSED' | 'CODE_ONLY' | 'ASSISTED';
@@ -60,7 +60,7 @@ export function IntakePage() {
   if (result) {
     return (
       <div className="narrow stack">
-        <h1>Intake saved</h1>
+        <ResultHeading>Intake saved</ResultHeading>
         <div className="card">
           <h2>Reference card</h2>
           <p>Write this on the reference card. It identifies the record but is not a password and unlocks nothing.</p>

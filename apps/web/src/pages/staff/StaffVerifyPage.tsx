@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import type { SessionDto } from '@rf/contracts';
 import { api } from '../../lib/api';
 import { useSession } from '../../lib/session';
-import { ErrorSummary, Field, SecretBox, useSubmit } from '../../components/forms';
+import { ErrorSummary, Field, ResultHeading, SecretBox, useSubmit } from '../../components/forms';
 import { usePageTitle } from '../../components/PageTitle';
 
 /** Staff two-step verification: enrollment (first time) and per-session verification. */
@@ -51,7 +51,7 @@ export function StaffVerifyPage() {
   if (recoveryCodes && verifiedSession) {
     return (
       <div className="narrow stack">
-        <h1>Save your staff recovery codes</h1>
+        <ResultHeading>Save your staff recovery codes</ResultHeading>
         <p>Each code works once if you lose your authenticator. They are shown only now.</p>
         <ul className="plain">
           {recoveryCodes.map((c) => (

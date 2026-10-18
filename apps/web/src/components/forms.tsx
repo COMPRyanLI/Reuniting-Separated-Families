@@ -94,6 +94,22 @@ export function useSubmit<T>(fn: (idempotencyKey: string) => Promise<T>) {
   return { submit, pending, error, fieldErrors: toFieldErrors(error), setError };
 }
 
+/**
+ * Heading of a result that replaces a form. It takes focus when shown, so screen readers announce
+ * the result and keyboard focus is not lost with the removed submit button.
+ */
+export function ResultHeading({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
+  return (
+    <h1 ref={ref} tabIndex={-1}>
+      {children}
+    </h1>
+  );
+}
+
 export function SecretBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="stack">

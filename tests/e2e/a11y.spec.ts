@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import * as OTPAuth from 'otpauth';
 import { demoSecret } from '../../prisma/fixtures';
 import { expectNoHorizontalScroll, newActor, SEED_PASSWORD, SEED_SECRET, signIn, signInStaff, uniqueName } from './helpers';
 
@@ -157,4 +158,56 @@ test('UX-02 @a11y staff two-step setup reflows at 390 px: the long setup link wr
   await expect(staff.page.getByText(/otpauth:\/\//)).toBeVisible();
   await expectNoHorizontalScroll(staff.page);
   await staff.context.close();
+});
+
+// Found in the owner's screen-reader walkthrough (step 8): when a result replaces a form, the focused
+// button disappears and a newly inserted status is often not spoken. Focus moves to the result heading.
+test('UX-01 @a11y result screens that replace a form move focus to their heading', async ({ browser }) => {
+  const { context, page } = await newActor(browser);
+  const username = uniqueName('focus');
+  await page.goto('/signup');
+  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Password').fill('focus test passphrase');
+  await page.getByLabel('Name others will see').fill('Focus Tester (fictional)');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page.getByRole('heading', { name: 'Save your recovery secret' })).toBeFocused();
+  const secret = ((await page.getByLabel('Your recovery secret').textContent()) ?? '').trim();
+  await page.getByLabel('I have written down my recovery secret').check();
+  await page.getByRole('button', { name: 'Continue' }).click();
+
+  await page.goto('/requests/new');
+  await page.getByLabel('Contact code', { exact: true }).fill('0123-4567-89AB-CDEF-GHJK-MNPQ-RS');
+  await page.getByLabel('Introduction').fill('Focus check (fictional)');
+  await page.getByRole('button', { name: 'Send private request' }).click();
+  await expect(page.getByRole('heading', { name: 'Request saved' })).toBeFocused();
+
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.goto('/recover');
+  await page.getByLabel('Username').fill(username);
+  await page.getByLabel('Recovery secret').fill(secret);
+  await page.getByLabel('New password').fill('focus test passphrase 2');
+  await page.getByRole('button', { name: 'Set new password' }).click();
+  await expect(page.getByRole('heading', { name: 'Password changed' })).toBeFocused();
+  await context.close();
+});
+
+test('UX-01 @a11y staff result screens move focus to their heading', async ({ browser }) => {
+  const { context, page } = await newActor(browser);
+  // worker.a2 is not used elsewhere in the accessibility run, so its two-step setup starts fresh here.
+  await signIn(page, 'worker.a2');
+  await page.getByLabel('Confirm your password').fill(SEED_PASSWORD);
+  await page.getByRole('button', { name: 'Start setup' }).click();
+  const key = ((await page.getByLabel(/Setup key/).textContent()) ?? '').trim();
+  const totp = new OTPAuth.TOTP({ secret: OTPAuth.Secret.fromBase32(key), digits: 6, period: 30, algorithm: 'SHA1' });
+  await page.getByLabel('6-digit code').fill(totp.generate());
+  await page.getByRole('button', { name: 'Verify' }).click();
+  await expect(page.getByRole('heading', { name: 'Save your staff recovery codes' })).toBeFocused();
+  await page.getByRole('button', { name: 'I saved them, continue' }).click();
+
+  await page.goto('/staff/intake');
+  await page.getByLabel('Name the person wants to use').fill('Focus Intake (fictional)');
+  await page.getByLabel('The person agreed to this intake after I explained what is recorded').check();
+  await page.getByRole('button', { name: 'Save intake' }).click();
+  await expect(page.getByRole('heading', { name: 'Intake saved' })).toBeFocused();
+  await context.close();
 });

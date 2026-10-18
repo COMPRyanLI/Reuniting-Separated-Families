@@ -12,7 +12,8 @@ A small full-stack website for the hurricane scenario in the challenge brief (`F
 | Acceptance catalog | 59 of 63 IDs covered by passing automated tests or recorded evidence; see [docs/test-traceability.md](docs/test-traceability.md) |
 | Live deployed link | **Not deployed.** Render's free tier was chosen: `render.yaml` runs one free web service (migrations, one-time fictional seed and worker in one process) with a free PostgreSQL that expires after 30 days. It needs a public repository and a Render account |
 | Public repository link | **Not created.** One local commit on `main`; no remote, nothing pushed |
-| Accessibility | Automated checks, keyboard journeys and a real 200% browser-zoom audit pass. **Screen-reader check pending** a person listening ([walkthrough](docs/screen-reader-walkthrough.md)) |
+| Accessibility | Automated checks, keyboard journeys and a real 200% browser-zoom audit pass. Screen-reader walkthrough done by the owner with open details ([record](docs/screen-reader-walkthrough.md)) |
+| Shelter use without devices | Tested automatically end to end (intake, paper contact code, no-code matching across two shelters) and walked through by the owner ([steps](docs/shelter-walkthrough.md)) |
 
 ## The story it supports
 

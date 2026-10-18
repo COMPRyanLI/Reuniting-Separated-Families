@@ -24,11 +24,12 @@ Last updated: 2026-10-19, Asia/Shanghai.
 
 ## Next concrete task
 
-1. **Screen-reader session (owner, PENDING):** follow [screen-reader-walkthrough.md](screen-reader-walkthrough.md) with Narrator or NVDA and report each step's result. The agent fixes reported defects with regression tests and repeats the affected steps. Do not mark UX-01's screen-reader part passed before this.
-2. **Publishing decisions (owner):** GitHub account or organization and repository name; public visibility; whether `Full stack challenge.pdf` may be published (currently excluded through `.git/info/exclude`); who pushes (the agent needs the remote URL and working Git credentials, and an explicit instruction to push).
-3. **Render (owner):** sign in with GitHub on the free workspace, optionally run `render blueprints validate render.yaml`, apply `render.yaml` with **New > Blueprint** (region Singapore is fixed after creation), and share the service URL. No secret values need to be entered. See [deployment.md](deployment.md).
-4. **After deployment (agent):** `npm run smoke:deployed -- --base-url <url>`, private-browser check, restart for persistence, then record DEPLOY-01..04 here and in [test-traceability.md](test-traceability.md).
-5. **Before day 30 after the database was created (owner):** upgrade the free database (about US$6/month) or accept that Render deletes it after the 14-day grace period.
+1. **Shelter walkthrough (owner): done, overall report "these all looks perfect" (2026-10-19), no per-step notes.** follow [shelter-walkthrough.md](shelter-walkthrough.md): staff account by operator command, intake of two people without devices, a paper contact code, and a no-code request across two shelters. Record observations in that file.
+2. **Screen-reader follow-up (owner):** re-listen to steps 5 and 8 after the focus fix, confirm step 2 speech, and record the screen reader name and version in [screen-reader-walkthrough.md](screen-reader-walkthrough.md).
+3. **Publishing decisions (owner):** GitHub account or organization and repository name; public visibility; whether `Full stack challenge.pdf` may be published (currently excluded through `.git/info/exclude`); who pushes (the agent needs the remote URL and working Git credentials, and an explicit instruction to push).
+4. **Render (owner):** sign in with GitHub on the free workspace, optionally run `render blueprints validate render.yaml`, apply `render.yaml` with **New > Blueprint** (region Singapore is fixed after creation), and share the service URL. No secret values need to be entered. See [deployment.md](deployment.md).
+5. **After deployment (agent):** `npm run smoke:deployed -- --base-url <url>`, private-browser check, restart for persistence, then record DEPLOY-01..04 here and in [test-traceability.md](test-traceability.md).
+6. **Before day 30 after the database was created (owner):** upgrade the free database (about US$6/month) or accept that Render deletes it after the 14-day grace period.
 
 ## Decisions made to remove implementation ambiguity
 
@@ -642,4 +643,44 @@ Read first: AGENTS.md, this file (entries 11-12, Codex deployment review); Git: 
    only); staged files reviewed for secrets, credentials, dumps, personal data and home paths; first local commit
    created on main (its ID is in `git log`; no remote, nothing pushed).
 Dev database: not reset or modified this session; staff MFA unchanged. All test databases disposable and dropped.
+```
+
+### Entry 14: Partial human screen-reader observations (2026-10-19)
+
+Recorded the tester's step 1 OK and step 2 skip-link usability concern in docs/screen-reader-walkthrough.md. Reproduced Enter on the focused skip link in the visible localhost in-app browser: accessibility state reported focus on main and URL #main. Saved evidence/screen-reader/step-02-main-focus.jpg. Step 2 spoken feedback is unconfirmed; steps 3–12 remain pending and UX-01 is not newly claimed complete. No application code or database changes; no suites rerun for this documentation-only update.
+
+Follow-up, same date: progressed through step 12 with the owner's listening confirmations, recorded individually in the walkthrough. Created fictional Alex Demo and Jamie Demo accounts in the development database, used one Hillcrest check-in, sent a request, shared its approximate area for 24 hours, cancelled revoke-all, revoked the individual share, and signed out. No database reset or staff MFA change. Saved screenshots under evidence/screen-reader; no credentials included in report screenshots. Step 12 Back behavior is human-reported. Still unconfirmed: step 2 spoken focus transition, brief shelter-loading speech, automatic request-success announcement, and screen-reader name/version. UX-01 is not claimed unconditionally complete. No application code changes or automated-suite reruns; documentation diff checked and instruction-file hashes compared.
+
+### Entry 15: shelter flows without devices, staff provisioning, result-screen focus (2026-10-19)
+
+```text
+Agent/tool: Claude Code (claude-opus-5-5), Node 24.22.0
+Request: owner asked how people without devices send and receive requests, how shelters get staff accounts, and
+  noted these were not tested; approved (1) step-8 focus fix, (2) missing tests, (3) a guided shelter walkthrough
+  (most important).
+1. Staff provisioning: tests/integration/staff-provision.test.ts runs the real `scripts/staff-admin.ts provision`
+   against a disposable database: refuses without --confirm, unknown account and missing shelter; grants WORKER;
+   old session ends (401); staff tools answer 403 MFA_REQUIRED until two-step setup; /staff/me then lists Riverside.
+   RED on duplicate grant (raw Prisma error text) -> staffAdmin.ts maps P2002 to "This account already has this
+   active staff role." -> GREEN.
+2. Contact code issued at intake (no previous test): tests/integration/intake-contact-code.test.ts - family use the
+   paper code, the request waits until a verified visit, the worker records the person's answer, the requester sees
+   "Response available"; a restricted referral asking for a code is refused (422, field error) and creates nothing.
+   Both passed first time (no defect).
+3. Two people without devices at two shelters, browser: tests/e2e/shelter-walkthrough.spec.ts (worker.a, worker.b,
+   coord.b in separate contexts): intake of both people, paper contact code request and answer, then a no-code request
+   assigned by coord.b, proposed by worker.b, answered at Tomas's verified visit; before the answer Rosa's side shows
+   only "No response available yet" and not Tomas's name. Passed first time.
+4. Result-screen focus (walkthrough step 8): a11y.spec "result screens that replace a form move focus to their
+   heading" (individual: sign-up, request saved, password changed; staff: recovery codes, intake saved) RED
+   (heading inactive) -> forms.tsx ResultHeading (focus on mount, tabIndex -1) on the five screens -> GREEN.
+5. docs/shelter-walkthrough.md written from the passing browser test (parts B-D) and the provisioning test (part A).
+   Screen-reader record: Codex's entry 14 and the owner's observations kept; follow-up section added (re-listen
+   steps 5 and 8).
+6. npm run verify run 7 -> exit 0: docs, lint, typecheck, build, unit 26/26, integration 102/102, security 14/14,
+   e2e 28/28, a11y 7/7, no skips (evidence/verify-2026-10-19/verify-run7-node24.22.0.log, home path redacted).
+Committed in the second local commit on the owner's instruction (2026-10-19): these changes, entry 14's record and the nine
+  screenshots in evidence/screen-reader/ (two reviewed at first; all nine reviewed before the
+  second commit: fictional accounts only, no secrets).
+Dev database: not reset or modified by the agent this entry; staff MFA unchanged. Test databases disposable.
 ```

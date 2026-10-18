@@ -39,6 +39,10 @@ export async function provisionStaff(
     await revokeAllSessions(deps, tx, account.id);
     await audit(tx, { actorAccountId: null, action: 'staff.provision', objectType: 'StaffMembership', objectId: m.id, authorityType: 'OPERATOR_CLI', result: 'SUCCEEDED', at: now });
     return m;
+  }).catch((e: unknown) => {
+    // The one-active-role unique index: same account, incident, shelter and role.
+    if ((e as { code?: string }).code === 'P2002') throw new Error('This account already has this active staff role.');
+    throw e;
   });
 }
 

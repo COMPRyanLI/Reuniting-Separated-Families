@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import type { SessionDto } from '@rf/contracts';
 import { api } from '../../lib/api';
 import { useSession } from '../../lib/session';
-import { ErrorSummary, Field, SecretBox, useSubmit } from '../../components/forms';
+import { ErrorSummary, Field, ResultHeading, SecretBox, useSubmit } from '../../components/forms';
 import { usePageTitle } from '../../components/PageTitle';
 
 export function RecoverPage() {
@@ -32,7 +32,7 @@ export function RecoverPage() {
   if (result) {
     return (
       <div className="narrow stack">
-        <h1>Password changed</h1>
+        <ResultHeading>Password changed</ResultHeading>
         <p>All your other sessions were signed out. Your old recovery secret no longer works. Save this new one:</p>
         <SecretBox label="Your new recovery secret" value={result.recoverySecret} />
         <div className="choice">
