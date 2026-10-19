@@ -1,0 +1,13 @@
+
+Running 8 tests using 1 worker
+
+  ✓  1 tests\hosted\hosted.spec.ts:75:1 › public pages load, have no serious accessibility findings and keep private API closed (7.8s)
+  ✓  2 tests\hosted\hosted.spec.ts:95:1 › sign-in errors do not reveal whether a username exists (1.3s)
+  ✓  3 tests\hosted\hosted.spec.ts:103:1 › two people: check-in, contact code, private request, exact preview, answer, outsider denied, revoke (26.7s)
+  ✓  4 tests\hosted\hosted.spec.ts:169:1 › state-changing requests need the session CSRF token and the site origin (1.2s)
+  ✓  5 tests\hosted\hosted.spec.ts:190:1 › shared device: sign out, then Back shows no private data and the old session is dead (2.8s)
+  ✓  6 tests\hosted\hosted.spec.ts:201:1 › password recovery with the recovery secret; the old password stops working (4.6s)
+  ✓  7 tests\hosted\hosted.spec.ts:222:1 › signed-in pages have no serious accessibility findings and fit a phone screen (15.3s)
+  ✓  8 tests\hosted\hosted.spec.ts:234:1 › clean-up: each fictional account deletes itself and can no longer sign in (9.4s)
+
+  8 passed (1.2m)

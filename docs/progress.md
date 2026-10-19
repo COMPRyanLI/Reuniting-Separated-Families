@@ -719,3 +719,28 @@ Live site: https://reconnect-web.onrender.com (Render free, Singapore), reposito
    docs/Reconnect-user-manual.pdf (19 pages) by scripts/build-manual.mjs; pages reviewed as images.
 Dev database: not used. Live data: only fictional accounts, all deleted after the checks.
 ```
+
+### Entry 17: GitHub CI run #3 failure fixed (2026-10-19)
+
+```text
+Agent/tool: Claude Code (claude-opus-5-5)
+Symptom: GitHub Actions run #3 (commit e408458, README-only) failed in test:e2e: FLOW-01/PRIV-04 at
+  flows.spec.ts:48, "strict mode violation: getByText('Response available') resolved to 2 elements": the Outgoing
+  page's explanation ("No response available yet" is all we can say...) and the status badge. Runs #1, #2 and two
+  local full runs passed.
+Cause (test defect): getByText with a plain string matches a case-insensitive substring. Before the request list
+  loaded, the locator matched only the explanation paragraph, so the check passed without the badge (a latent false
+  positive); when the list loaded first, both matched and strict mode failed every retry until the 20 s timeout.
+Fix: status-badge locators are exact ('Response available', 'Answered', 'Revoked') in tests/e2e/flows.spec.ts,
+  tests/hosted/hosted.spec.ts, scripts/zoom-audit.mjs and scripts/manual-screenshots.mjs. FLOW-01 gained a check
+  before the answer: the requester sees exactly "No response available yet" and no "Response available" badge.
+  No assertion was relaxed.
+Diagnostics: playwright.config.ts adds the 'github' reporter on GitHub Actions, so failures appear as annotations
+  (readable through the public API without signing in).
+Live suite: a rerun first failed because the free service was asleep and Render served its "Service waking up"
+  interstitial to the browser for longer than 20 s. tests/hosted/hosted.spec.ts now wakes the site (polls
+  /api/health/ready up to 230 s) before browser checks. README and manual now describe that waking page.
+Results: npm run test:e2e -> 28/28 (4.3m); test:hosted -> 8/8 (hosted-browser-rerun.log); lint and typecheck exit 0;
+  manual PDF rebuilt.
+```
+

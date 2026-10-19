@@ -30,6 +30,10 @@ test('FLOW-01/PRIV-04 code request, exact-preview safety answer, then revocation
   await requester.page.getByRole('button', { name: 'Send private request' }).click();
   await expect(requester.page.getByRole('heading', { name: 'Request saved' })).toBeVisible();
   await expect(requester.page.getByText(/never say whether a code matched/)).toBeVisible();
+  // Status badges are matched exactly: the page's explanation also contains the words "response available".
+  await requester.page.goto('/requests/outgoing');
+  await expect(requester.page.getByText('No response available yet', { exact: true })).toBeVisible();
+  await expect(requester.page.getByText('Response available', { exact: true })).toHaveCount(0);
 
   await recipient.page.goto('/requests/incoming');
   await reloadUntil(recipient.page, () => expect(recipient.page.getByText('E2E_SENTINEL_INTRO')).toBeVisible());
@@ -42,10 +46,10 @@ test('FLOW-01/PRIV-04 code request, exact-preview safety answer, then revocation
   await recipient.page.screenshot({ path: 'evidence/screenshots/respond-preview-1280.png', fullPage: true });
   await recipient.page.getByRole('button', { name: 'Review and share' }).click();
   await recipient.page.getByRole('button', { name: /Confirm: share with Quinn/ }).click();
-  await expect(recipient.page.getByText('Answered')).toBeVisible();
+  await expect(recipient.page.getByText('Answered', { exact: true })).toBeVisible();
 
   await requester.page.goto('/requests/outgoing');
-  await reloadUntil(requester.page, () => expect(requester.page.getByText('Response available')).toBeVisible());
+  await reloadUntil(requester.page, () => expect(requester.page.getByText('Response available', { exact: true })).toBeVisible());
   await requester.page.getByRole('link', { name: 'View response' }).click();
   await expect(requester.page.getByText('E2E_SENTINEL_NOTE')).toBeVisible();
   await expect(requester.page.getByText('No location is included.')).toBeVisible();
@@ -58,7 +62,7 @@ test('FLOW-01/PRIV-04 code request, exact-preview safety answer, then revocation
   // The recipient revokes; the requester's next load shows nothing.
   await recipient.page.goto('/sharing');
   await recipient.page.getByRole('button', { name: 'Revoke', exact: true }).click();
-  await expect(recipient.page.getByText('Revoked')).toBeVisible();
+  await expect(recipient.page.getByText('Revoked', { exact: true })).toBeVisible();
   await requester.page.goto(responseUrl);
   await expect(requester.page.getByRole('heading', { name: 'This answer is not available' })).toBeVisible();
   await expect(requester.page.getByText('E2E_SENTINEL_NOTE')).toHaveCount(0);

@@ -8,7 +8,7 @@ A full-stack web app for the hurricane scenario in the challenge brief: people s
 
 | | |
 | --- | --- |
-| **Live demo** | **<https://reconnect-web.onrender.com>** (free hosting: after 15 quiet minutes the first page takes about a minute to wake) |
+| **Live demo** | **<https://reconnect-web.onrender.com>** (free hosting: after 15 quiet minutes Render first shows its own "Service waking up" page for up to about a minute, then the app opens) |
 | **Repository** | <https://github.com/COMPRyanLI/Reuniting-Separated-Families> |
 | **User manual (PDF)** | [docs/Reconnect-user-manual.pdf](docs/Reconnect-user-manual.pdf): for people with a phone, people without one, shelter staff, and operators |
 | **Design and tradeoffs** | [docs/design-and-tradeoffs.md](docs/design-and-tradeoffs.md) |

@@ -206,10 +206,10 @@ try {
   await shot(alex, 'p14-answer-preview', { locator: alex.getByRole('region', { name: /Exactly what/ }) });
   await alex.getByRole('button', { name: 'Review and share' }).click();
   await alex.getByRole('button', { name: /Confirm: share with/ }).click();
-  await alex.getByText('Answered').first().waitFor();
+  await alex.getByText('Answered', { exact: true }).first().waitFor();
 
   await jordan.goto(`${ORIGIN}/requests/outgoing`);
-  await reloadUntil(jordan, jordan.getByText('Response available'));
+  await reloadUntil(jordan, jordan.getByText('Response available', { exact: true }));
   await shot(jordan, 'p15-outgoing', { maxHeight: 700 });
   await jordan.getByRole('link', { name: 'View response' }).first().click();
   await jordan.getByRole('heading', { name: /Answer from/ }).waitFor();

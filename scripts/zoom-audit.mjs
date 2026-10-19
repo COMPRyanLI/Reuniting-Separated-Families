@@ -380,7 +380,7 @@ try {
     await page.getByRole('button', { name: 'Review and share' }).click();
     await audit('respond-confirm');
     await page.getByRole('button', { name: /Confirm: share with/ }).click();
-    await page.getByText('Answered').first().waitFor();
+    await page.getByText('Answered', { exact: true }).first().waitFor();
     await audit('answered');
     await page.goto(`${ORIGIN}/sharing`);
     await audit('sharing');
@@ -394,7 +394,7 @@ try {
   await step('maya-view', async () => {
     await signIn('maya');
     await page.goto(`${ORIGIN}/requests/outgoing`);
-    await reloadUntil(page.getByText('Response available'));
+    await reloadUntil(page.getByText('Response available', { exact: true }));
     await page.getByRole('link', { name: 'View response' }).first().click();
     await page.getByRole('heading', { level: 1 }).waitFor();
     await audit('response-view');
@@ -408,7 +408,7 @@ try {
     await signIn('leo');
     await page.goto(`${ORIGIN}/sharing`);
     await page.getByRole('button', { name: 'Revoke', exact: true }).first().click();
-    await page.getByText('Revoked').first().waitFor();
+    await page.getByText('Revoked', { exact: true }).first().waitFor();
     await audit('revoked');
     await page.goto(`${ORIGIN}/account`);
     await page.getByRole('button', { name: 'Delete my account' }).click();

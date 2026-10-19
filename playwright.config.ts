@@ -15,7 +15,10 @@ export default defineConfig({
   // Staff sign-ins may wait up to 30 s for a fresh TOTP step (replay protection is per account).
   timeout: 120_000,
   expect: { timeout: 10_000 },
-  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  // On GitHub Actions, failures are also posted as annotations (file, line, error) on the run page.
+  reporter: process.env.GITHUB_ACTIONS
+    ? [['list'], ['github'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
+    : [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   outputDir: 'test-results',
   use: {
     baseURL,

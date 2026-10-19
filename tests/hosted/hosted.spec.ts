@@ -17,6 +17,14 @@ let roryRecovery = '';
 let roryCode = '';
 let responseUrl = '';
 
+// The free host sleeps when idle and shows browsers its own "waking up" page: wake it before any check.
+test.beforeAll(async ({ request }) => {
+  test.setTimeout(240_000);
+  await expect
+    .poll(async () => (await request.get('/api/health/ready', { timeout: 120_000 }).catch(() => null))?.status(), { timeout: 230_000, intervals: [2000, 5000] })
+    .toBe(200);
+});
+
 async function actor(browser: Browser, who: Who, viewport = { width: 1280, height: 800 }) {
   const context = await browser.newContext({ viewport });
   const page = await context.newPage();
@@ -129,10 +137,10 @@ test('two people: check-in, contact code, private request, exact preview, answer
   await expect(preview).not.toContainText('42 Sample Road');
   await rory.getByRole('button', { name: 'Review and share' }).click();
   await rory.getByRole('button', { name: /Confirm: share with Quinn/ }).click();
-  await expect(rory.getByText('Answered').first()).toBeVisible();
+  await expect(rory.getByText('Answered', { exact: true })).toBeVisible();
 
   await quinn.goto('/requests/outgoing');
-  await reloadUntil(quinn, () => expect(quinn.getByText('Response available')).toBeVisible());
+  await reloadUntil(quinn, () => expect(quinn.getByText('Response available', { exact: true })).toBeVisible());
   await quinn.getByRole('link', { name: 'View response' }).click();
   await expect(quinn.getByRole('heading', { name: /Answer from Rory/ })).toBeVisible();
   await expect(quinn.getByText('Area: Hillcrest')).toBeVisible();
@@ -153,7 +161,7 @@ test('two people: check-in, contact code, private request, exact preview, answer
 
   await rory.goto('/sharing');
   await rory.getByRole('button', { name: 'Revoke', exact: true }).click();
-  await expect(rory.getByText('Revoked')).toBeVisible();
+  await expect(rory.getByText('Revoked', { exact: true })).toBeVisible();
   await quinn.goto(responseUrl);
   await expect(quinn.getByRole('heading', { name: 'This answer is not available' })).toBeVisible();
 });
