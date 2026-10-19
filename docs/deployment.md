@@ -1,6 +1,18 @@
 # Deployment guide
 
-Status 2026-10-19: **not deployed.** There is no hosting account, no database and no remote; one local Git commit exists on `main`. Everything below was prepared and checked locally. Render facts come from Render's documentation read on 2026-10-19; confirm them before relying on them.
+Status 2026-10-19: **deployed** on Render's free tier at **<https://reconnect-web.onrender.com>** from the public repository <https://github.com/COMPRyanLI/Reuniting-Separated-Families> (Blueprint `render.yaml`, region Singapore, Node 24.22.0, first deployed revision `7036fb2`). Render facts come from Render's documentation read on 2026-10-19; confirm them before relying on them.
+
+### Checks on the live site (2026-10-19)
+
+| Check | Result |
+| --- | --- |
+| `npm run smoke:deployed -- --base-url https://reconnect-web.onrender.com` | 15/15: liveness, readiness (database), home and deep-link reload, private API closed, sign-up, `__Host-` Secure HttpOnly cookie, check-in, neutral 202 request, delivery by the in-process worker, area-only answer, outsider 404, revoke ([log](../evidence/hosted-2026-10-19/smoke-deployed.log)) |
+| `HOSTED_URL=https://reconnect-web.onrender.com npm run test:hosted` | 8/8 browser tests with fictional accounts in separate browser contexts (two people and an outsider), including CSRF and foreign-origin refusal, shared-device sign-out, password recovery, accessibility scans, phone width, and self-deletion of every test account ([log](../evidence/hosted-2026-10-19/hosted-browser.log)) |
+| Headers and transport | HSTS, strict CSP, `X-Frame-Options`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, no `X-Powered-By`; HTTP redirects to HTTPS; unknown API paths return the neutral 404 |
+| Restart (service put to sleep by Render after idling, then woken) | Passed: after 18 idle minutes Render had put the service to sleep; the first request took 32.6 s (new server process), the next 0.3 s. A fictional marker account and its check-in created before the sleep were still there afterwards ([result](../evidence/hosted-2026-10-19/restart-persistence.json)); the marker account was deleted afterwards |
+| Staff and assisted flows on the live site | **Not run by the agent**: they need the demo staff password (`SEED_PASSWORD`, Render dashboard), which must not be pasted into chat. The same build passed them locally (browser test `shelter-walkthrough.spec.ts`) |
+
+Open item: the app's per-IP sign-in and registration limits use the client address taken with `TRUST_PROXY=1`. Responses come through Cloudflare in front of Render; Render's guidance is to read the client IP from `X-Forwarded-For`, but whether one trusted hop yields each visitor's own address (rather than a shared proxy address) was not verified. If many people hit the limits together, check this first.
 
 ## Chosen option: Render free tier (owner's choice, 2026-10-19)
 
@@ -42,11 +54,11 @@ Node version is pinned in three places that must stay equal: `render.yaml` (`NOD
 
 ### Steps for the owner
 
-1. Create a **public** GitHub repository (name and account are your choice) and push `main`, or give the agent the remote URL and an explicit instruction to push. `.env`, test reports, `tmp/` and `evidence/tmp/` are ignored by Git; `Full stack challenge.pdf` is excluded locally until you approve publishing it.
-2. Sign in to Render with GitHub. Optionally run `render blueprints validate render.yaml` with the Render CLI. Choose **New > Blueprint**, select the repository, and apply `render.yaml`. No values need to be entered.
-3. Wait for the first deploy (build, then migrations and the one-time seed at start). Open the service URL.
+1. Done: public repository created and `main` pushed (2026-10-19). `.env`, test reports, `tmp/` and `evidence/tmp/` are ignored by Git; `Full stack challenge.pdf` is excluded locally until publication is approved.
+2. Done (2026-10-19): signed in to Render with GitHub and applied the Blueprint. Optionally run `render blueprints validate render.yaml` with the Render CLI. Choose **New > Blueprint**, select the repository, and apply `render.yaml`. No values need to be entered.
+3. Done: first deploy finished; the service URL is https://reconnect-web.onrender.com.
 4. In the Render dashboard, open the web service's **Environment** and read `SEED_PASSWORD` to sign in as the fictional demo accounts. Do not paste it publicly. For a public demo, prefer creating new accounts on the site and a fresh staff intake.
-5. Tell the agent the URL. It will run `npm run smoke:deployed -- --base-url <url>`, check the site in a private browser window, restart the service to confirm persistence, and record DEPLOY-01..04.
+5. Done: the agent ran the deployed smoke test and the hosted browser suite, checked persistence across a sleep and wake, and recorded DEPLOY-01..04 (see "Checks on the live site" above).
 6. Staff demo access needs two-step verification: each reviewer enrolls their own authenticator for a fictional staff account. There is no MFA bypass.
 
 ## Paid option (upgrade path)

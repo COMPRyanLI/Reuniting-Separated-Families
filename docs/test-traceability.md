@@ -23,6 +23,15 @@ Windows 11, **Node 24.22.0** (per-user install; `node --version` is printed at t
 
 Performance results come from one Windows laptop with a local database. They do not predict the Render free tier (0.1 CPU, 512 MB, cold starts after sleep), which has not been measured.
 
+## Live-site evidence (2026-10-19, progress entry 16)
+
+| Run | Result | Evidence |
+| --- | --- | --- |
+| `npm run smoke:deployed -- --base-url https://reconnect-web.onrender.com` | 15/15 | `evidence/hosted-2026-10-19/smoke-deployed.log` |
+| `HOSTED_URL=https://reconnect-web.onrender.com npm run test:hosted` | 8/8 (fictional accounts, deleted afterwards) | `evidence/hosted-2026-10-19/hosted-browser.log` |
+| Sleep and wake persistence | Wake 32.6 s after 18 idle minutes; marker data intact | `evidence/hosted-2026-10-19/restart-persistence.json` |
+| Clean clone of the public repository | install, build and non-browser suites pass | progress entry 16 |
+
 ## Older evidence (Node 24.16.0, progress entries 10-12; superseded by the runs above)
 
 | Run | Result | Evidence |
@@ -103,10 +112,10 @@ Suites: `unit` = `npm run test:unit`, `int` = `npm run test:integration`, `sec` 
 | PERF-01 | Evidence (local) | Node 24.22.0, both modes: `evidence/performance/perf-summary.json` 29,939 operations, p95 68.0 ms; `perf-summary-single-process.json` 34,473 operations, p95 61.6 ms; 0% errors and 0 unauthorized payloads in both. Not measured on a host |
 | PERF-02 | Evidence (local) | delivery p95 1,057 ms / 1,082 ms (single process), 0 duplicates; login p95 52.8 / 48.5 ms. Browser update time is derived (delivery p95 + 15 s poll), not measured in a browser. On the free host the worker sleeps with the service |
 | PERF-03 | Evidence (local) | initial JS 95.9 KiB gzip, median LCP 1,216 / 1,200 ms (5 throttled runs), no external hosts; cold start 279 ms (server bundle) and 1,332 ms (whole free-hosting start). Render's wake-up after sleep (about a minute per Render) is not measured |
-| DEPLOY-01 | Not run | No Render account or public repository yet. Locally: `npm run smoke:deployed` 14/14 against a production build (2026-10-18) and the free single-process start rehearsal 8/8 (`evidence/drills/free-tier-check.json`); neither is a deployment |
-| DEPLOY-02 | Not run | Same dependency |
-| DEPLOY-03 | Partial | README, clean-copy install and Docker build exist; no public repository URL |
-| DEPLOY-04 | Partial | Local verify, performance and traceability exist; no deployed smoke on a release revision |
+| DEPLOY-01 | Evidence (live) | 2026-10-19, https://reconnect-web.onrender.com: fresh browser contexts over HTTPS, deep-link reload, `__Host-` Secure HttpOnly session, readiness with the database, delivery by the in-process worker (`evidence/hosted-2026-10-19/smoke-deployed.log`, 15/15; `hosted-browser.log`, 8/8). Restart: Render put the service to sleep after 18 idle minutes; the wake took 32.6 s and a marker account with its check-in survived (`restart-persistence.json`) |
+| DEPLOY-02 | Partial (live) | Self-service golden path, outsider denial and revocation pass on the live site (`hosted-browser.log`). The staff-assisted golden path was **not run on the live site**: it needs the demo staff password, which must not be pasted into chat; the same build passed it locally (e2e `shelter-walkthrough.spec.ts`, verify run 7) |
+| DEPLOY-03 | Evidence | Clean clone of the public repository (`7036fb2`, no `.env`): `npm ci`, docs check, lint, typecheck, build, unit 26/26, integration 102/102, security 14/14 (browser suites not run in the clone). Public repository holds no `.env`, deployment secrets or the challenge PDF. README with live URL, screenshots, full picture, design, technical choices, tradeoffs and AI notes is in the documentation commit after `7036fb2` |
+| DEPLOY-04 | Evidence | Release code `7036fb2`: verify run 7 (unit 26, integration 102, security 14, e2e 28, a11y 7, no skips); performance evidence local only (both modes, 11/11 gates); live smoke 15/15 and live browser suite 8/8; this traceability audit. Known limits reported in README and deployment.md |
 
 ## Manual testing guide coverage (2026-10-19)
 

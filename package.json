@@ -44,6 +44,9 @@
     "start:free": "node scripts/start-free.mjs",
     "check:free-start": "node --import tsx scripts/free-tier-check.mjs",
     "audit:zoom": "node --import tsx scripts/zoom-audit.mjs",
+    "manual:screenshots": "node --import tsx scripts/manual-screenshots.mjs",
+    "manual:build": "node scripts/build-manual.mjs",
+    "test:hosted": "playwright test -c playwright.hosted.config.ts",
     "postinstall": "prisma generate"
   },
   "devDependencies": {

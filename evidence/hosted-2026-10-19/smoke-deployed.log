@@ -1,0 +1,21 @@
+
+> family-reunification-prototype@0.1.0 smoke:deployed
+> tsx scripts/smoke-deployed.ts --base-url https://reconnect-web.onrender.com
+
+PASS  liveness 200
+PASS  readiness 200 (database reachable) (status 200)
+PASS  home page served
+PASS  nested route reload served by the app shell
+PASS  private API returns 401 without a session
+PASS  signup with username, password and alias only
+PASS  session cookie is __Host-, Secure and HttpOnly
+PASS  check-in saved
+PASS  request accepted with neutral 202
+PASS  background worker delivered the request (1 delivered)
+PASS  recipient approved an area-only answer
+PASS  requester reads exactly the area scope
+PASS  outsider gets the neutral 404
+PASS  revocation succeeds
+PASS  revoked answer is no longer returned
+
+15/15 checks passed against https://reconnect-web.onrender.com at 2026-10-18T23:14:17.865Z

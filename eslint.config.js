@@ -28,7 +28,7 @@ export default tseslint.config(
   },
   {
     // Callbacks in the zoom audit run inside the browser page or its helper extension.
-    files: ['scripts/zoom-audit.mjs'],
+    files: ['scripts/zoom-audit.mjs', 'scripts/manual-screenshots.mjs', 'scripts/build-manual.mjs'],
     languageOptions: { globals: { ...globals.browser, chrome: 'readonly' } },
   },
   {

@@ -1,133 +1,131 @@
-# Reconnect: private, consent-based family reunification (challenge prototype)
+# Reconnect: private, consent-based family reunification
 
-A small full-stack website for the hurricane scenario in the challenge brief (`Full stack challenge.pdf`, not included in the repository until its publication is approved). People who were separated can leave historical check-ins, send private requests, and decide exactly what to share with one specific person. Shelter staff can do all of this on behalf of someone who has no phone, account or ID.
+A full-stack web app for the hurricane scenario in the challenge brief: people separated in an evacuation leave historical check-ins, send private requests, and decide exactly what to share with one specific person. Shelter staff can do all of this with someone who has no phone, account or ID.
 
 **Demo with fictional data only. Not an emergency service.**
 
-## Status
-
-| Item | State |
+| | |
 | --- | --- |
-| Phases 00–06 (app, security, lifecycle, benchmarks) | Implemented and tested locally; evidence in [docs/progress.md](docs/progress.md) |
-| Acceptance catalog | 59 of 63 IDs covered by passing automated tests or recorded evidence; see [docs/test-traceability.md](docs/test-traceability.md) |
-| Live deployed link | **Not deployed.** Render's free tier was chosen: `render.yaml` runs one free web service (migrations, one-time fictional seed and worker in one process) with a free PostgreSQL that expires after 30 days. It needs a public repository and a Render account |
-| Public repository link | **Not created.** One local commit on `main`; no remote, nothing pushed |
-| Accessibility | Automated checks, keyboard journeys and a real 200% browser-zoom audit pass. Screen-reader walkthrough done by the owner with open details ([record](docs/screen-reader-walkthrough.md)) |
-| Shelter use without devices | Tested automatically end to end (intake, paper contact code, no-code matching across two shelters) and walked through by the owner ([steps](docs/shelter-walkthrough.md)) |
+| **Live demo** | **<https://reconnect-web.onrender.com>** (free hosting: after 15 quiet minutes the first page takes about a minute to wake) |
+| **Repository** | <https://github.com/COMPRyanLI/Reuniting-Separated-Families> |
+| **User manual (PDF)** | [docs/Reconnect-user-manual.pdf](docs/Reconnect-user-manual.pdf): for people with a phone, people without one, shelter staff, and operators |
+| **Design and tradeoffs** | [docs/design-and-tradeoffs.md](docs/design-and-tradeoffs.md) |
 
-## The story it supports
+## Overview
 
-1. Sam reaches Riverside shelter with no phone. A worker records an intake (alias only), a check-in, and gives Sam a reference card plus a separate private assistance secret.
-2. Leo, Sam's relative, registers on his own with a username, password and alias. He records that he is at Hillcrest School Gym.
-3. Sam (through the worker) sends Leo a private request using the contact code Leo gave the family. Nobody learns whether the code matched anyone.
-4. Leo chooses what to share: a message only, the approximate area of one check-in, or the named shelter of one check-in, for 24 hours or 7 days. He sees an exact preview first.
-5. Only Sam's verified case team can open that answer with Sam. Any other account, worker or URL gets the same "not found".
-6. Leo revokes the share. The next read fails everywhere.
+Try it in two browser windows (one normal, one private): create two accounts, add a check-in in one, create a contact code under **Privacy and contact code**, send a request from the other with that code, then answer it and choose what to share. The [user manual](docs/Reconnect-user-manual.pdf) shows every step.
 
-Without a contact code, a requester can ask one chosen shelter's team for help. A worker there compares the clues only with people at that shelter who opted into assisted matching, and proposes a match for that person's own decision. The requester never sees candidates or learns the outcome.
-
-## People and what the site does for them
-
-| Who | Need | What the site provides |
+| Answering: choose what to share | Exact preview before sharing | Staff case page for a person without a phone |
 | --- | --- | --- |
-| Person with a phone | Be findable on their own terms | Account with alias, historical check-ins, contact code, inbox, per-person sharing, revoke |
-| Person who wants privacy | Search without revealing themselves | No location required; incoming requests can be closed; requesters learn nothing unless answered |
-| Person without phone or ID | Take part at all | Staff-assisted intake, check-ins, requests and answers; private assistance secret for repeat visits |
-| Shelter worker | Help quickly without overreach | Assigned cases only, short verified sessions, intake in 3 primary steps, matching limited to opted-in local people |
-| Shelter coordinator | Allocate work, hand over cases | Minimal case index (no names), assignment, routed-request queue, transfers, review and closure |
-| Child or person unable to consent | Safeguarding | Restricted referral record only: no location, requests, matching or sharing |
+| ![What to share](docs/manual/img/p13-answer-choices.jpg) | ![Exact preview](docs/manual/img/p14-answer-preview.jpg) | ![Staff case page](docs/manual/img/s06-case-workspace.jpg) |
 
-## What is deliberately not built
+| Mobile dashboard | Looking for someone without a code | Staff intake result (secrets hidden) |
+| --- | --- | --- |
+| ![Mobile dashboard](evidence/screenshots/dashboard-390.png) | ![Request without a code](docs/manual/img/p10-request-no-code.jpg) | ![Intake saved](docs/manual/img/s04-intake-saved.jpg) |
 
-No GPS or live location, no public people directory or search, no automatic family access, no automatic identity or guardian verification, no automatic record merging, no SMS/email, no maps, no chat or attachments, no broadcast matching across shelters. These are listed with reasons in [design.md](design.md).
+All screenshots use fictional data; secrets are masked.
 
-## How it fits a larger system
+## The full picture
 
-A real deployment would sit alongside agencies that already restore family links (for example national Red Cross tracing services). This prototype covers the narrow, privacy-critical core: consented routing and disclosure. The surrounding system would need partner agreements, trained and vetted staff, a safeguarding referral process for children, multilingual support, offline/paper procedures (outlined in [design.md](design.md#connectivity-and-paper-fallback)), and operations staff for credential recovery.
+**What I built and why.** The most dangerous part of reunification is not search but **disclosure**: a list anyone can search would also help an abusive partner or an informant find someone who fled. So I built the consented core end to end: a request reaches the right person, and that person alone decides what, if anything, to reveal, to one recipient, for a limited time. It works with or without a phone, through shelter staff.
 
-## Key design decisions and tradeoffs
+**The story it supports.**
 
-- **Privacy over findability.** A person is only reachable through their contact code or an opted-in shelter case. This means some searches never succeed; the site says "No response available yet" rather than revealing anything.
-- **Uniform outcomes.** Valid, unknown, rotated, closed and blocked codes all return the same `202`, and declined or blocked requests look exactly like unanswered ones until the original 14-day deadline.
-- **History, not location.** A check-in is "last reported" with time, timezone and source. Superseding a shared report marks it "no longer current" without revealing the new place.
-- **Grants are narrow.** One response, one recipient, one check-in at most, 24 h or 7 days, revocable. Later check-ins never follow.
-- **Staff act as themselves.** Staff need TOTP two-step verification, an active assignment on the case at their current shelter, and a 10-minute verification of the person's own secret before any sensitive assisted action. Coordinators allocate work without seeing person content.
-- **Defense in depth in the database.** Composite foreign keys guarantee that a response's subject is the request's recipient, the grant goes to the requester, a disclosed check-in belongs to the subject, and staff assignments stay inside one incident.
-- **Reliability.** Idempotency keys on every critical write, row locks for approve/withdraw/block races, a database outbox with leases and bounded retries that rechecks authority at delivery.
-- **Cost of these choices.** More steps for staff, no "found" confirmation for anxious families, and requests that can stay unresolved when nobody has a lead.
+1. Sam reaches Riverside shelter with no phone. A worker records an intake (any name, no ID), a check-in, and gives Sam a reference card plus a separate private assistance secret, and a contact code for family.
+2. Leo, Sam's relative, signs up on his own phone with a username, password and nickname, and records that he is at Hillcrest School Gym.
+3. Sam, through the worker, sends Leo a private request with the code Leo gave the family. Nobody learns whether the code matched anyone.
+4. Leo chooses what to share: a message only, the approximate area of one check-in, or the named shelter of one check-in, for 24 hours or 7 days. He sees an exact preview first.
+5. Only Sam's case worker, during a visit verified with Sam's secret, can open that answer with Sam. Any other account, worker or link gets the same "not found".
+6. Leo can revoke the share at any time; the next read fails everywhere.
 
-## Architecture
+Without a contact code, a requester asks **one** shelter's team for help. A worker there compares the clues only with people at that shelter who opted into assisted matching and proposes one person, who decides. The requester never sees candidates or learns the outcome.
+
+**How the parts I did not build would work** (details in [design-and-tradeoffs.md](docs/design-and-tradeoffs.md#4-how-the-rest-of-the-system-would-work)): paper-only shelters use a one-page form keyed in later as staff-recorded check-ins; existing tracing services (such as national Red Cross family-links services) send requests through the same consented route; a phone hotline works like a shelter desk; SMS carries only "you have an update"; child reunification and identity checks go to trained safeguarding staff through restricted referrals; duplicates are flagged for staff, never merged automatically.
+
+**Where this piece fits.** It is the privacy-critical layer between people, shelters and tracing agencies: whatever other channel finds a lead, the person being looked for still decides what is revealed.
+
+## Design
+
+**Users.**
+
+| Who | Need | What the app provides |
+| --- | --- | --- |
+| Person with a phone | Be findable on their own terms; ask after others | Alias account, historical check-ins, contact code, requests, per-person sharing, revoke |
+| Person without phone or ID | Take part at all | Staff-assisted intake, check-ins, requests and answers; private assistance secret on paper |
+| Person who does not want to be found | Search without exposure | No public list or search; incoming requests can be closed; decline and block are never revealed |
+| Shelter worker or volunteer | Help quickly without overreach | Assigned cases only, two-step sign-in, 10-minute verified visits, 3-step intake, matching only among opted-in people |
+| Shelter coordinator | Allocate work, move cases | Assign matching tasks and staff, transfers and case reviews, without reading case content |
+| Child or person unable to consent | Protection | Restricted referral only: no location, requests, matching or sharing |
+
+**Which part and why:** see "The full picture" above.
+
+**Edge cases considered** (full table in [design-and-tradeoffs.md](docs/design-and-tradeoffs.md#5-edge-cases-and-how-they-are-handled)): no phone or ID; an abusive partner probing for someone; people afraid to give a real name; someone claiming to be family; a code given to the wrong person; out-of-date locations; screenshots of shared data; lost passwords and lost assistance secrets; children; shared shelter computers; worker overreach; requests sent to the wrong shelter; deletion and restored backups; network failures mid-form.
+
+**Deliberately not built:** live location or GPS, a people directory or search, automatic family access, identity or guardian verification, automatic record merging, SMS or email, maps, chat or attachments.
+
+## Technical choices
+
+- **Stack:** TypeScript end to end. React 19 + Vite web app, Node.js 24 + Express 5 API serving the built app from the same origin, PostgreSQL 17 with Prisma migrations plus hand-written constraints, zod schemas shared by client and server. One backend, one database, and a database outbox for background delivery (no Redis or queue to secure).
+- **Why:** few moving parts, each well understood; relational constraints make some privacy bugs impossible (a share cannot reference a check-in that is not the answerer's); everything deploys as one free web service.
+- **Security:** Argon2id passwords; server-side sessions in `__Host-`, Secure, HttpOnly, SameSite cookies; CSRF token plus origin check on every change; strict Content Security Policy; HMAC digests for codes and secrets; AES-256-GCM for private text; identical responses for every routing outcome; metadata-only logs. See [security-and-permissions.md](docs/security-and-permissions.md).
+- **Biggest tradeoff: privacy over findability.** Nobody is told "we found them" unless that person chose to answer, and there is no name search. Some families will wait longer or never connect through this tool. I accepted that because a wrong disclosure cannot be undone while a slow reunion can still happen another way. The reasoning, and how the cost is reduced, is in [design-and-tradeoffs.md](docs/design-and-tradeoffs.md#7-the-biggest-tradeoff-privacy-over-findability).
+- **Hosting tradeoff:** the free Render tier runs the website, API and background worker in one process with a free database. It sleeps after 15 idle minutes (the worker sleeps too), the free database expires 30 days after creation, has no backups, and scheduled clean-up only runs while awake (deletion itself purges immediately). The paid two-process setup is ready in [deploy/render.paid.yaml](deploy/render.paid.yaml).
 
 ```text
-Browser (React + Vite, same origin)
-   -> Express API: session cookie -> origin/CSRF check -> zod validation -> policy -> domain service -> explicit serializer
-   -> PostgreSQL 17 (Prisma migrations + hand-written constraints)
-   <- outbox worker (separate process): claim with lease -> recheck authority -> generic notification
+Browser (React, same origin)
+  -> Express API: session cookie -> origin + CSRF check -> zod validation -> permission policy -> domain service -> explicit response fields
+  -> PostgreSQL 17 (migrations + constraints)
+  <- outbox worker (in the web process on the free host): claim with lease -> recheck permission -> generic notification
 ```
 
-TypeScript monorepo: `apps/api`, `apps/web`, `packages/contracts` (shared zod schemas and types), `prisma/` (schema, migrations, fictional seed), `tests/` (unit, integration, security, e2e), `scripts/` (verify, e2e runner, operator CLIs, performance).
+Repository layout: `apps/api`, `apps/web`, `packages/contracts`, `prisma/` (schema, migrations, fictional seed), `tests/` (unit, integration, security, e2e, hosted), `scripts/` (verification, operator tools, audits), `docs/`.
 
-Security details: Argon2id passwords; opaque session tokens stored as HMAC digests; HttpOnly, SameSite=Lax, `__Host-` + Secure cookies on HTTPS; 30 min idle / 12 h absolute sessions (staff 15 min / 8 h); polling never extends idle time; AES-256-GCM application encryption with versioned keys for introductions, clues, messages, matching clues and TOTP secrets; purpose-separated HMAC digests for codes and secrets; strict CSP; metadata-only logs and audit. See [docs/security-and-permissions.md](docs/security-and-permissions.md).
+## Testing and evidence
 
-## Screenshots (fictional data)
-
-| Mobile dashboard | Answer preview before sharing | Staff case workspace |
+| Where | What ran | Result |
 | --- | --- | --- |
-| ![Dashboard at 390px](evidence/screenshots/dashboard-390.png) | ![Exact recipient-view preview](evidence/screenshots/respond-preview-1280.png) | ![Verified case workspace](evidence/screenshots/staff-case-1280.png) |
+| Live site (2026-10-19) | `npm run smoke:deployed` against the live URL | 15/15 ([log](evidence/hosted-2026-10-19/smoke-deployed.log)) |
+| Live site (2026-10-19) | `npm run test:hosted`: two people and an outsider in separate browsers; sign-up, check-in, contact code, request, exact preview, answer, outsider denied, revoke; CSRF and foreign-origin refusal; shared-device sign-out and Back; password recovery; accessibility scans and phone-width layout; account deletion | 8/8 ([log](evidence/hosted-2026-10-19/hosted-browser.log)); fictional test accounts deleted afterwards |
+| Live site (2026-10-19) | Security headers, HTTP to HTTPS, deep links, 404 handling | HSTS, CSP, frame blocking, no-referrer, no `X-Powered-By`; HTTP redirects to HTTPS |
+| Live site (2026-10-19) | Restart: idle until Render put the service to sleep, then wake | Passed: after 18 idle minutes the first request took 32.6 s (Render woke a new server process); a fictional marker account created before the sleep still signed in and its check-in was still there ([result](evidence/hosted-2026-10-19/restart-persistence.json)); marker deleted afterwards |
+| Local, Node 24.22.0 | `npm run verify` (docs, lint, types, build, unit, integration on real PostgreSQL, security, browser, accessibility) | unit 26, integration 102, security 14, browser 28, accessibility 7; no skips |
+| Local | Performance benchmark, 10,000-person synthetic dataset, 20 clients, both hosting modes | all 11 gates passed (p95 62–68 ms); laptop results, not hosted |
+| Local | Real 200% browser zoom over 40 views; restore drill; free-hosting rehearsal | 0 findings after 2 fixes; 11/11; 8/8 |
+| People | Screen-reader walkthrough and shelter walkthrough by the owner | done; open details recorded in [docs](docs/screen-reader-walkthrough.md) |
 
-More at 390, 768 and 1280 px in [evidence/screenshots](evidence/screenshots).
+Every acceptance ID is mapped to its test in [docs/test-traceability.md](docs/test-traceability.md); the full handoff log with commands, failures and fixes is [docs/progress.md](docs/progress.md).
 
-## Local setup
+## Running it locally
 
-Requirements: Node 24.22.0 (`.nvmrc`; any 24.x from 24.11 works), npm 11, Docker (for PostgreSQL) or any disposable PostgreSQL 17 server.
+Requirements: Node 24.22.0 (`.nvmrc`; any 24.x from 24.11 works), npm 11, Docker (for PostgreSQL) or any disposable PostgreSQL 17.
 
 ```bash
 npm ci
 npm run setup:env        # creates .env with random local keys (never overwrites)
 npm run db:up            # PostgreSQL 17 on 127.0.0.1:55432 via docker compose
 npm run db:migrate       # applies committed migrations; never resets
-npm run db:seed          # fictional fixtures; idempotent; refuses non-demo environments
-npm run dev              # API :3000, web :5173 (open http://localhost:5173), worker
+npm run db:seed          # fictional demo data; refuses non-demo environments
+npm run dev              # open http://localhost:5173
 ```
 
-Production-style run: `npm run build`, then `npm run start` and `npm run worker` in two terminals.
+Demo accounts: people `maya`, `leo`, `noor`, `evan`; staff `worker.a`, `worker.a2`, `coord.a` (Riverside), `worker.b`, `coord.b` (Hillcrest). The password is `SEED_PASSWORD` in your `.env`. Staff set up an authenticator app on first sign-in. Creating staff accounts: `npm run staff:admin -- provision --username NAME --role WORKER --shelter "Riverside Community Center" --confirm` (see the manual, Part 4).
 
-Demo accounts (local seed): individuals `maya`, `leo`, `noor`, `evan`; staff `worker.a`, `worker.a2`, `worker.b`, `coord.a`, `coord.b`, `operator.o`. The password is the `SEED_PASSWORD` value in your `.env`. Staff set up an authenticator app on first sign-in. Assisted people (Sam, Ana and others) have assistance secrets derived from `SEED_SECRET`; for a walkthrough, create a new intake from a worker account and use the secret it shows.
-
-Operator tools: `npm run staff:admin -- provision --username u --role WORKER --shelter "Riverside Community Center" --confirm`, and `npm run ops -- retention | reencrypt | ledger-export --out f | ledger-replay --in f`.
-
-## Tests and evidence
-
-```bash
-npm run verify             # docs, lint, types, build, unit, integration, security, e2e, accessibility
-npm run test:performance   # PERF-01..03 benchmark (needs a build); writes evidence/performance/perf-summary.json
-npm run test:performance -- --single-process   # same, against the free-hosting start command
-npm run audit:zoom         # real 200% Chromium page zoom over 40 views; writes evidence/zoom-200/
-npm run check:free-start   # free-hosting rehearsal: start, smoke, delete, restart
-npm run drill:restore      # restore drill through the operator CLI on disposable databases
-npm run smoke:deployed -- --base-url https://host   # non-destructive deployed smoke
-```
-
-Integration and security tests use real disposable PostgreSQL databases named `rf_test_*` on `TEST_DATABASE_ADMIN_URL` (defaults to the local Docker server). Browser tests run Playwright against the production build, the worker and a disposable database, with separate browser contexts per person.
-
-Latest local results (2026-10-19, Node 24.22.0, final `npm run verify` run 6): 26 unit, 99 integration, 14 security, 27 browser and 5 accessibility tests passing, no skips. All 11 performance gates passed in both modes on a 10,000-person synthetic dataset with 20 clients: p95 68 ms over 29,939 operations with the in-process harness, and p95 62 ms over 34,473 operations against the single-process free-hosting start; delivery p95 about 1.1 s, login p95 under 55 ms, 96 KiB initial JS, median throttled mobile LCP 1.2 s. These are laptop results, not hosted measurements. The restore drill passed 11/11 and the free-hosting rehearsal 8/8. The 200% zoom audit covered 40 views and found two defects, both fixed with regression tests. Older runs, including a failed one, are kept in `evidence/verify-2026-10-19/` (home-directory paths replaced with `~`). Exact commands, environment and failures are in [docs/progress.md](docs/progress.md); current versus older evidence and the lifecycle status (recovery, transfers, deletion, purge, expiry, restore) are in [docs/test-traceability.md](docs/test-traceability.md).
-
-## Deployment
-
-The `Dockerfile` builds one image with three commands: web (`node apps/api/dist/server.js`), worker (`node apps/api/dist/worker.js`) and release (`node node_modules/prisma/build/index.js migrate deploy`). It was built on `node:24.22.0-bookworm-slim` and started locally against a disposable PostgreSQL database with production settings. The chosen free setup, its limits, the paid upgrade path and the steps are in [docs/deployment.md](docs/deployment.md). The free Blueprint is [render.yaml](render.yaml); `npm run check:free-start` rehearses its single-process start locally. A live URL still requires a public repository (the owner chooses its name and who pushes) and a Render account.
+Deployment: [docs/deployment.md](docs/deployment.md) ([render.yaml](render.yaml) is applied as a Render Blueprint; no secrets need to be typed).
 
 ## Known limitations
 
-- Not deployed; no public repository yet (one local commit).
-- On the chosen free host, scheduled clean-up (for example request text 30 days after closure) runs only while the service is awake, so those retention windows can run late. Deletion purges immediately, and expiry and revocation are checked on every read.
-- Login proves control of an account, not identity. Staff-recorded consent is witnessed, not provable.
-- A lost assistance secret only opens a manual escalation; there is no automated recovery for assisted people.
-- Requests without a lead, or to shelters without staff, stay unresolved by design.
-- Revocation stops future reads; it cannot erase screenshots or copies.
-- Operators who hold database and key access are trusted. Database volume and backup encryption depend on the host.
-- Performance numbers come from one Windows laptop with a local database; they do not show regional-scale capacity.
-- Automated accessibility checks and a real 200% zoom audit (Chromium only) passed, but the screen-reader check is still pending. English only.
+- Free hosting: sleeps after 15 idle minutes; the free database is deleted 30 days after creation unless upgraded; no backups; scheduled clean-up runs late while asleep.
+- On the hosted demo, new staff accounts cannot be added without a deliberate change (no shell, database closed to outside connections); demo staff accounts exist. Each staff account's two-step setup belongs to whoever completes it first.
+- Per-IP sign-in and registration limits rely on the client address the host forwards; with Cloudflare in front of Render this was not independently verified.
+- Signing in proves control of an account, not identity. Staff-recorded consent is witnessed, not provable.
+- Requests without a good lead stay unanswered by design. Revocation cannot erase copies or screenshots.
+- Performance was measured on one laptop with a local database, not on the host or at regional scale.
+- English only. Screen-reader check done by the owner with open details (see its record).
 
 ## How AI was used
 
-This implementation was written by Claude Code (an AI coding agent) following the planning documents in `docs/` and the rules in `AGENTS.md`/`CLAUDE.md`. The planning documents predate the implementation; the owner should state which tools helped write them. The human owner set the product rules and scope. Output was verified by running it, not by trusting it: every acceptance ID maps to a test that was executed against real PostgreSQL and a real browser; several authorization tests were mutation-checked by deliberately removing a policy check and confirming the test failed; test mistakes found along the way are recorded in the progress log rather than hidden. Claims in this README are limited to what those runs showed.
+- **My decisions (the owner):** I decided the user classifications, specified which detailed portion of the functionality to concentrate on, and made all the tradeoff decisions. I wrote the detailed implementation plans (the Markdown files in `docs/`, including the phase plans and the acceptance catalog) and the detailed harness metrics the agents used to build, test and improve the product.
+- **Claude Code (Claude Opus 5.5)** developed the product from those plans: implementation, tests, fixes, deployment preparation and documentation.
+- **OpenAI Codex (GPT Astra)** was used for debugging and for Playwright testing of the frontend.
+- **My own review:** I personally went through all the key code, and ran the screen-reader and shelter walkthroughs myself.
+- **How the output was checked:** nothing was accepted on trust. Every acceptance ID maps to a test that ran against real PostgreSQL and real browsers; several authorization tests were checked by removing a policy check and confirming the test failed; failures and test mistakes are recorded in [docs/progress.md](docs/progress.md) instead of hidden.

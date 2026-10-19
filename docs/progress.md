@@ -7,7 +7,7 @@ Last updated: 2026-10-19, Asia/Shanghai.
 - Challenge PDF read; people, use cases, scope, and privacy interactions discussed with the user.
 - Planning package written: matching coding-agent instructions, design, permissions, data/API contracts, eight implementation phases, and acceptance catalog.
 - Implementation started 2026-10-18 (Claude Code). See the implementation log below for evidence per phase.
-- No deployed website exists yet.
+- Deployed 2026-10-19 at https://reconnect-web.onrender.com (Render free tier); see entry 16.
 
 ## Phase status
 
@@ -20,16 +20,15 @@ Last updated: 2026-10-19, Asia/Shanghai.
 | 04 Shelter interactions | COMPLETE | FLOW-05..06, PRIV-08, STAFF-04..08, REL-01..04 evidence in log entry 5 |
 | 05 Website experience | COMPLETE (screen reader PENDING) | UX-01..05 evidence in log entries 6, 10 and 13. Real 200% browser zoom done (entry 13, two defects fixed). Screen-reader check PENDING the owner ([walkthrough](screen-reader-walkthrough.md)) |
 | 06 Hardening/benchmarks | COMPLETE | Log entries 7, 10 and 13: final verify run 6 passed on Node 24.22.0; performance 11/11 gates in both the default and single-process mode (local); restore drill 11/11 |
-| 07 Deployment/submission | BLOCKED on owner (local commit made) | First local commit on `main` (entry 13). No remote, push, Render account or deployment. Render free tier chosen; `render.yaml` schema-valid with Node 24.22.0; single-process start rehearsed locally 8/8; not applied (log entries 11-13) |
+| 07 Deployment/submission | DEPLOYED (free tier) | https://reconnect-web.onrender.com from https://github.com/COMPRyanLI/Reuniting-Separated-Families (`7036fb2`). Live smoke 15/15, live browser suite 8/8, sleep/wake persistence passed, clean clone reproducible (entry 16). Staff-assisted path not run on the live site |
 
 ## Next concrete task
 
-1. **Shelter walkthrough (owner): done, overall report "these all looks perfect" (2026-10-19), no per-step notes.** follow [shelter-walkthrough.md](shelter-walkthrough.md): staff account by operator command, intake of two people without devices, a paper contact code, and a no-code request across two shelters. Record observations in that file.
-2. **Screen-reader follow-up (owner):** re-listen to steps 5 and 8 after the focus fix, confirm step 2 speech, and record the screen reader name and version in [screen-reader-walkthrough.md](screen-reader-walkthrough.md).
-3. **Publishing decisions (owner):** GitHub account or organization and repository name; public visibility; whether `Full stack challenge.pdf` may be published (currently excluded through `.git/info/exclude`); who pushes (the agent needs the remote URL and working Git credentials, and an explicit instruction to push).
-4. **Render (owner):** sign in with GitHub on the free workspace, optionally run `render blueprints validate render.yaml`, apply `render.yaml` with **New > Blueprint** (region Singapore is fixed after creation), and share the service URL. No secret values need to be entered. See [deployment.md](deployment.md).
-5. **After deployment (agent):** `npm run smoke:deployed -- --base-url <url>`, private-browser check, restart for persistence, then record DEPLOY-01..04 here and in [test-traceability.md](test-traceability.md).
-6. **Before day 30 after the database was created (owner):** upgrade the free database (about US$6/month) or accept that Render deletes it after the 14-day grace period.
+1. Done (2026-10-19): the owner authorized committing and pushing the documentation commit; the push triggers one Render redeploy (no app code changes).
+2. **Owner, optional:** run the staff-assisted path on the live site with the demo staff password from the Render dashboard (parts B-D of [shelter-walkthrough.md](shelter-walkthrough.md)), or give the agent the password through a git-ignored local file (never in chat).
+3. Done: the owner stated the AI-use notes now in the README (owner wrote the plans, user classifications, scope, tradeoffs and harness metrics; Claude Code (Claude Opus 5.5) developed; OpenAI Codex (GPT Astra) debugged and ran frontend Playwright tests; owner reviewed the key code).
+4. **Owner, optional:** re-listen to screen-reader steps 5 and 8 and record the screen reader and version.
+5. **Before day 30 after the database was created (owner):** upgrade the free database (about US$6/month) or accept that Render deletes it after the 14-day grace period.
 
 ## Decisions made to remove implementation ambiguity
 
@@ -683,4 +682,40 @@ Committed in the second local commit on the owner's instruction (2026-10-19): th
   screenshots in evidence/screen-reader/ (two reviewed at first; all nine reviewed before the
   second commit: fictional accounts only, no secrets).
 Dev database: not reset or modified by the agent this entry; staff MFA unchanged. Test databases disposable.
+```
+
+### Entry 16: live-site testing, README and deliverables, user manual (2026-10-19)
+
+```text
+Agent/tool: Claude Code (claude-opus-5-5), Node 24.22.0
+Live site: https://reconnect-web.onrender.com (Render free, Singapore), repository COMPRyanLI/Reuniting-Separated-Families,
+  deployed revision 7036fb2.
+1. Transport and headers (curl): health live/ready 200; HSTS, CSP, X-Frame-Options, Referrer-Policy no-referrer,
+   Permissions-Policy, COOP/CORP, no X-Powered-By; HTTP 301 to HTTPS; deep link served by the app; API 404 envelope.
+2. npm run smoke:deployed against the live URL -> 15/15 (evidence/hosted-2026-10-19/smoke-deployed.log).
+3. New live browser suite tests/hosted/hosted.spec.ts + playwright.hosted.config.ts (npm run test:hosted, HOSTED_URL):
+   first run 2/8 + 1 failed: the script used the shelter label "Hillcrest School Gym" but options read "Hillcrest
+   School Gym (Hillcrest)" (script defect). Its two fictional accounts were deleted through the API (204, then 401).
+   Added a real foreign-origin refusal check. Final run 8/8 (hosted-browser.log): public pages + axe (no serious
+   findings), private API closed, no source maps, same sign-in error for unknown user and wrong password, two people
+   and an outsider (check-in, contact code, "Enter the contact code.", focused "Request saved" = latest build,
+   area-only preview without address, answer, outsider 404, revoke), CSRF token and foreign Origin refused, staff API
+   403 for a person, sign-out + Back shows nothing and the old session is 401, recovery with the recovery secret,
+   eight signed-in pages at 390 px without horizontal scroll and without serious axe findings, every test account
+   deleted (sign-in then 401).
+4. Restart persistence: marker account + check-in created, no live traffic for 18 minutes; first request 32,570 ms
+   (woke from sleep), next 304 ms; marker signed in and its check-in was present (restart-persistence.json). Marker
+   deleted afterwards (204, sign-in 401) and its local credentials file removed.
+5. Clean clone of the public repository into a temporary folder (7036fb2, no .env): npm ci, docs:check, lint,
+   typecheck, build, unit 26/26, integration 102/102, security 14/14, all exit 0.
+6. Not run on the live site: staff-assisted flows (need SEED_PASSWORD; not to be shared in chat), load testing (not
+   appropriate on a shared free instance). Open: whether TRUST_PROXY=1 yields each visitor's own IP behind Cloudflare
+   (per-IP limits); Render's guidance reads X-Forwarded-For but does not state the hop count.
+7. Deliverables: README rewritten around the brief (overview with live link and screenshots, full picture, design,
+   technical choices and biggest tradeoff, testing evidence, local setup, limitations, AI use); new
+   docs/design-and-tradeoffs.md; deployment.md and traceability updated (DEPLOY-01 evidence, DEPLOY-02 partial,
+   DEPLOY-03 and -04 evidence). User manual: docs/manual/user-manual.html with 22 screenshots from a local disposable
+   database (scripts/manual-screenshots.mjs, secrets masked, capture refused if a mask fails), printed to
+   docs/Reconnect-user-manual.pdf (19 pages) by scripts/build-manual.mjs; pages reviewed as images.
+Dev database: not used. Live data: only fictional accounts, all deleted after the checks.
 ```

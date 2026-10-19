@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-18T23:39:52.624Z",
+  "idleSince": "2026-10-18T23:22:06.784Z",
+  "idleMinutes": 18,
+  "firstRequestMs": 32570,
+  "firstStatus": 200,
+  "warmRequestMs": 304,
+  "wokeFromSleep": true,
+  "markerSignIn": 200,
+  "markerCheckInPresent": true
+}
